@@ -1,0 +1,1 @@
+Trained on 2025-01-26 with potholes-only dataset
