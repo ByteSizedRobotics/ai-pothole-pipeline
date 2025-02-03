@@ -12,6 +12,8 @@ ENV PYTHONUNBUFFERED=1
 # Install pip requirements
 COPY requirements.txt .
 RUN python -m pip install -r requirements.txt
+RUN apt-get update && apt-get install -y libgl1
+RUN apt-get update && apt-get install -y libglib2.0-0 libsm6 libxext6 libxrender1
 
 WORKDIR /app
 COPY . /app
@@ -22,5 +24,4 @@ RUN adduser -u 5678 --disabled-password --gecos "" appuser && chown -R appuser /
 USER appuser
 
 # During debugging, this entry point will be overridden. For more information, please refer to https://aka.ms/vscode-docker-python-debug
-# TODO: Need to change this to use Waitress or some development server to use in production
-CMD ["python", "pothole-detection/deployment/local-app/app.py"]
+CMD ["python", "app.py"]
