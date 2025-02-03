@@ -24,7 +24,7 @@ To run it locally (not on web server but just as python script)
 
 3) Install required packages:
 
-- cd to pothole-detection\deployment
+- cd to pothole-detection\deployment\local-app
 - pip install -r requirements.txt
 
 
