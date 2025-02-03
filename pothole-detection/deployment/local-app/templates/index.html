@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YOLOv5 Flask App</title>
+</head>
+<body>
+    <h1>YOLOv5 Flask App</h1>
+    <form id="uploadForm" enctype="multipart/form-data">
+        <input type="file" name="file" id="file">
+        <button type="submit">Upload and Detect</button>
+    </form>
+    <div id="result"></div>
+
+    <h2>Live Inference</h2>
+    <form id="liveInferenceForm">
+        <label for="pathSavedImages">Path to Save Images:</label>
+        <input type="text" id="pathSavedImages" name="pathSavedImages" value="saved_images">
+        <button type="submit">Start Live Inference</button>
+    </form>
+
+    <script>
+        document.getElementById('uploadForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            var formData = new FormData(this);
+            fetch('/upload', {
+                method: 'POST',
+                body: formData
+            }).then(response => response.json())
+              .then(data => {
+                  if (data.result) {
+                      document.getElementById('result').innerHTML = `<img src="${data.result}" alt="Result">`;
+                  } else if (data.error) {
+                      document.getElementById('result').innerHTML = `<p>${data.error}</p>`;
+                  }
+              });
+        });
+
+        document.getElementById('liveInferenceForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            var formData = new FormData(this);
+            fetch('/start_live_inference', {
+                method: 'POST',
+                body: formData
+            }).then(response => response.json())
+              .then(data => {
+                  alert(data.status);
+              });
+        });
+    </script>
+</body>
+</html>
