@@ -12,7 +12,7 @@ To run it locally (not on web server but just as python script)
 - python local-model-testing.py
 
 
-Setup Virtual Env and install dependencies:
+## Setup Virtual Env and install dependencies:
 
 - python -m venv venv
 
