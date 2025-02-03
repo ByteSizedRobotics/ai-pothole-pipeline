@@ -1,7 +1,15 @@
 # ai-pothole-models
 
 ## Classification Model
-To deploy flask app.py on local web server (might need to install pip dependencies 1st):
+To run docker container
+
+- login to docker in terminal (docker login)
+- pull the image (docker pull ngawargy/pothole-classifier-app:latest)
+- run (docker run -p 5000:5000 ngawargy/pothole-classifier-app:latest)
+- go to http://localhost:5000 to see the app
+
+
+To deploy flask app.py on local web server without Docker (might need to install pip dependencies 1st):
 
 - cd to deployment\local-app
 - python app.py
