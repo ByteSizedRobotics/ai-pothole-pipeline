@@ -43,3 +43,4 @@ ultralytics==8.3.70
 ultralytics-thop==2.0.14
 urllib3==2.3.0
 Flask==3.1.0
+gunicorn==23.0.0
