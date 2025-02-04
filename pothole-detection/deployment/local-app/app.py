@@ -119,5 +119,5 @@ def start_live_inference():
     return jsonify({"status": "Live inference started"})
 
 if __name__ == '__main__':
-    load_model("yolo5s")  # CHANGE THE MODEL WANT TO LOAD HERE
+    load_model("yolo5s")  # TODO: CHANGE THE MODEL U WANT TO LOAD HERE
     app.run(host="0.0.0.0", port=5000)
