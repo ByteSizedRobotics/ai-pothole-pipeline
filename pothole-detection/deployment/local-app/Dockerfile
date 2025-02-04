@@ -17,6 +17,7 @@ RUN apt-get update && apt-get install -y libglib2.0-0 libsm6 libxext6 libxrender
 
 WORKDIR /app
 COPY . /app
+RUN mkdir /app/uploads
 
 # Creates a non-root user with an explicit UID and adds permission to access the /app folder
 # For more info, please refer to https://aka.ms/vscode-docker-python-configure-containers
