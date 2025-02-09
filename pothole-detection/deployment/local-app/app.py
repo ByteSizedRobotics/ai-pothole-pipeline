@@ -16,7 +16,7 @@ model = None
 def load_model(model_type):
     global model
     if model_type == "custom":
-        model = torch.hub.load('ultralytics/yolov5', 'custom', path='../train-runs/2025-02-02_yolov5s/run/weights/best.pt')
+        model = torch.hub.load('ultralytics/yolov5', 'custom', path='../../train-runs/2025-02-02_yolov5s/run/weights/best.pt')
     elif model_type == "yolo5s":
         model = torch.hub.load('ultralytics/yolov5', 'yolov5s', pretrained=True)
     elif model_type == "yolo5m":
@@ -119,5 +119,5 @@ def start_live_inference():
     return jsonify({"status": "Live inference started"})
 
 if __name__ == '__main__':
-    load_model("yolo5s")  # TODO: CHANGE THE MODEL U WANT TO LOAD HERE
+    load_model("custom")  # TODO: CHANGE THE MODEL U WANT TO LOAD HERE
     app.run(host="0.0.0.0", port=5000)
