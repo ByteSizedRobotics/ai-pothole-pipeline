@@ -1,8 +1,0 @@
-# Need to build an ARM64 image for rasberry pi
-docker buildx build --platform linux/arm64 -t ngawargy/pothole-classifier-app-arm64 .
-docker push ngawargy/pothole-classifier-app-arm64
-
-# On the rasbpi in terminal (this run command is used to provide access to camera)
-docker pull ngawargy/pothole-classifier-app-arm64
-docker run -d --name flask-pothole --device=/dev/video0 -p 5000:5000 ngawargy/pothole-classifier-app-arm64
-
