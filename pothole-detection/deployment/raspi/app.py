@@ -17,6 +17,10 @@ model = None
 # Load the model based on the type
 def load_model(model_type):
     global model
+
+    # NEED THIS OR ELSE DOESN"T WORK ON LINUX
+    # Need to force the load to be done on LINUX
+    # SOLUTION found on https://github.com/ultralytics/yolov5/issues/12911
     if platform.system() == 'Windows':
         pathlib.PosixPath = pathlib.WindowsPath
     else:
@@ -80,7 +84,7 @@ def index():
 @app.route('/start_live_inference', methods=['POST'])
 def start_live_inference():
     pathSavedImages = request.form.get('pathSavedImages', 'saved_images')
-    path = Path(pathSavedImages)
+    path = Path(pathSavedImages) # TODO: NATHAN update this so can save to specific folder
     if not path.exists():
         path.mkdir(parents=True, exist_ok=True)
 
