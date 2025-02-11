@@ -22,9 +22,11 @@ def load_model(model_type):
     else:
         pathlib.WindowsPath = pathlib.PosixPath
     if model_type == "custom":
-        model = torch.hub.load('ultralytics/yolov5', 'custom', path='/app/best_20250202.pt')
-    elif model_type == "yolo5s":
-        model = torch.hub.load('ultralytics/yolov5', 'custom', path='/app/yolov5s.pt')
+        model_path = str(Path("/app/best_20250202.pt"))
+        model = torch.hub.load('ultralytics/yolov5', 'custom', path=model_path, force_reload=True)
+    # elif model_type == "yolo5s":
+    #     model_path = str(Path("/app/yolov5s.pt"))
+    #     model = torch.hub.load('ultralytics/yolov5', 'custom', path=model_path, force_reload=True)
 
 # PERFORMS LIVE VIDEO INFERENCE
 def live_camera_inference(pathSavedImages):
