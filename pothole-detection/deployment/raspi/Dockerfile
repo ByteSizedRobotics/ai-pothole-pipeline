@@ -9,10 +9,10 @@ ENV PYTHONDONTWRITEBYTECODE=1
 # Turns off buffering for easier container logging
 ENV PYTHONUNBUFFERED=1
 
-# Install pip requirements
-COPY yolov5s.pt /app/models/yolo5s.pt
-COPY best_20250202.pt /app/models/best_20250202.pt
+# COPY yolov5s.pt /app/models/yolo5s.pt
+# COPY best_20250202.pt /app/models/best_20250202.pt
 
+# Install pip requirements
 COPY requirements.txt .
 RUN python -m pip install -r requirements.txt
 RUN apt-get update && apt-get install -y libgl1
