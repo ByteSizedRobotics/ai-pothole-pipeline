@@ -1,8 +1,9 @@
 train: ../pothole-detection/datasets/2-potholes-only/clean/train/images # path to training images
 val: ../pothole-detection/datasets/2-potholes-only/clean/valid/images # path to validation images
 
-# Classes
-names:
+nc: 81
+
+names: #COCO classes with added pothole class
   0: person
   1: bicycle
   2: car
