@@ -16,7 +16,7 @@ model = None
 def load_model(model_type):
     global model
     if model_type == "custom":
-        model = torch.hub.load('ultralytics/yolov5', 'custom', path='best_20250210.pt')
+        model = torch.hub.load('ultralytics/yolov5', 'custom', path='models/best_20250211.pt')
     elif model_type == "yolo5s":
         model = torch.hub.load('ultralytics/yolov5', 'yolov5s', pretrained=True)
     elif model_type == "yolo5m":
@@ -97,15 +97,18 @@ def upload():
 
     if file:
         filename = secure_filename(file.filename)
-        file_path = os.path.join('uploads', filename)
-        file.save(file_path)
+        upload_folder = 'output_images'
+        if not os.path.exists(upload_folder):
+            os.makedirs(upload_folder)
+        file_path = os.path.join(upload_folder, filename)
+        #file.save(file_path)
 
         # Perform inference on the uploaded image
         image = cv2.imread(file_path)
         results = model(image)
         results.render()
-        output_path = os.path.join('static', 'output', filename)
-        cv2.imwrite(output_path, results.ims[0])
+        #output_path = os.path.join('static', 'output', filename)
+        cv2.imwrite(file_path, results.ims[0])
 
         return jsonify({"result": f"/static/output/{filename}"})
 
@@ -119,5 +122,5 @@ def start_live_inference():
     return jsonify({"status": "Live inference started"})
 
 if __name__ == '__main__':
-    load_model("custom")  # TODO: CHANGE THE MODEL U WANT TO LOAD HERE
+    load_model("yolo5s")  # TODO: CHANGE THE MODEL U WANT TO LOAD HERE
     app.run(host="0.0.0.0", port=5000)
