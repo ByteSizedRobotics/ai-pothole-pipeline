@@ -24,18 +24,27 @@ Only the live inference with video is done in the container due to permission/ac
 - docker run -d --name flask-pothole --device=/dev/video0 -p 5000:5000 -v [PATH ON HOST TO SAVE IMAGES]:/app/saved_images [dockerUSERNAME]/pothole-classifier-app-arm64
 
 ## Setup Virtual Env and install dependencies
+#### WINDOWS
+1) Create venv
+python -m venv venv
 
-- python -m venv venv
+2) Activate the venv:
+Set-ExecutionPolicy Unrestricted -Scope Process
+.\venv\Scripts\Activate
 
-2) To activate the venv:
+4) Install packages
+cd pothole-detection\deployment\local-app
+pip install -r requirements.txt
 
-- Set-ExecutionPolicy Unrestricted -Scope Process
-- .\venv\Scripts\Activate
-- Run the local-app.py files: python name_file.py
+#### LINUX
+1) Create venv
+python3 -m venv venv
+  
+2) Activate the venv
+. venv/bin/activate
 
 3) Install required packages:
+    pothole-detection\deployment\local-app
+pip install -r requirements.txt
 
-- cd to pothole-detection\deployment\local-app
-- pip install -r requirements.txt
-
-
+NOTE: can deactivate whenever with: deactive
