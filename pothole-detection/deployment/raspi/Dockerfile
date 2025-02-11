@@ -22,8 +22,8 @@ WORKDIR /app
 COPY . /app
 RUN mkdir /app/uploads
 
-# Declare /app/saved_images as a volume
-VOLUME /app/saved_images
+# Declare /app/saved_images as a volume (now using a bind mount)
+# VOLUME /app/saved_images
 
 # Set environment variable for save path
 ENV SAVE_PATH="/app/saved_images"
