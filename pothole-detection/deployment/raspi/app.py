@@ -1,5 +1,7 @@
 from flask import Flask, render_template, request, jsonify
 from pathlib import Path
+import pathlib
+import platform
 import cv2
 import torch
 import time
@@ -15,6 +17,10 @@ model = None
 # Load the model based on the type
 def load_model(model_type):
     global model
+    if platform.system() == 'Windows':
+        pathlib.PosixPath = pathlib.WindowsPath
+    else:
+        pathlib.WindowsPath = pathlib.PosixPath
     if model_type == "custom":
         model = torch.hub.load('ultralytics/yolov5', 'custom', path='/app/best_20250202.pt')
     elif model_type == "yolo5s":
