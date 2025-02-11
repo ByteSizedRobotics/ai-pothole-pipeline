@@ -6,9 +6,11 @@ __pycache__/
 # C extensions
 *.so
 
+# Ignore datasets folder
+datasets/ 
+
 # Distribution / packaging
 .Python
-datasets/
 build/
 develop-eggs/
 dist/
