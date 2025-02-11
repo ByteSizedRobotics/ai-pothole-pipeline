@@ -4,6 +4,7 @@ import pathlib
 import platform
 import cv2
 import torch
+import os
 import time
 import threading
 from werkzeug.utils import secure_filename
@@ -14,8 +15,8 @@ app = Flask(__name__)
 last_saved_time = 0
 model = None
 
-# Load the model based on the type
-def load_model(model_type):
+# Load the model
+def load_model():
     global model
 
     # NEED THIS OR ELSE DOESN"T WORK ON LINUX
@@ -25,15 +26,15 @@ def load_model(model_type):
         pathlib.PosixPath = pathlib.WindowsPath
     else:
         pathlib.WindowsPath = pathlib.PosixPath
-    if model_type == "custom":
-        model_path = str(Path("/app/best_20250202.pt"))
-        model = torch.hub.load('ultralytics/yolov5', 'custom', path=model_path, force_reload=True)
-    # elif model_type == "yolo5s":
-    #     model_path = str(Path("/app/yolov5s.pt"))
+
+    model_path = str(Path("/app/models/best_20250210.pt"))
+    model = torch.hub.load('ultralytics/yolov5', 'custom', path=model_path, force_reload=True)
+
+    #     model_path = str(Path("/app/models/yolov5s.pt"))
     #     model = torch.hub.load('ultralytics/yolov5', 'custom', path=model_path, force_reload=True)
 
 # PERFORMS LIVE VIDEO INFERENCE
-def live_camera_inference(pathSavedImages):
+def live_camera_inference(save_path):
     camera = cv2.VideoCapture(0)  # 0 for default camera
 
     while True:
@@ -47,7 +48,7 @@ def live_camera_inference(pathSavedImages):
 
         cv2.imshow('YOLOv5 Live', frame)
 
-        threading.Thread(target=save_pictures, args=(frame, results, pathSavedImages)).start()
+        threading.Thread(target=save_pictures, args=(frame, results, save_path)).start()
 
         if cv2.waitKey(1) & 0xFF == ord('q'):  # break the loop when press q
             break
@@ -56,7 +57,7 @@ def live_camera_inference(pathSavedImages):
     cv2.destroyAllWindows()
 
 # SAVES PICTURES EVERY 10 SECONDS IF OBJECT DETECTED WITH CONFIDENCE ABOVE THRESHOLD
-def save_pictures(frame, results, pathSavedImages):
+def save_pictures(frame, results, save_path):
     CONFIDENCE_THRESHOLD = 0.5
 
     global last_saved_time
@@ -69,11 +70,11 @@ def save_pictures(frame, results, pathSavedImages):
         save_image = any(det[4] > CONFIDENCE_THRESHOLD for det in detections)
 
         if save_image:
-            base_path = Path(pathSavedImages)
+            base_path = Path(save_path)
             image_name = Path(f"capture_{int(current_time)}.jpg")
-            filename = base_path / image_name
-            cv2.imwrite(filename, frame)
-            print(f"Image saved: {filename}")
+            image_path = base_path / image_name
+            cv2.imwrite(image_path, frame)
+            print(f"Image saved: {image_path}")
 
         last_saved_time = current_time  # Update timestamp
 
@@ -83,14 +84,19 @@ def index():
 
 @app.route('/start_live_inference', methods=['POST'])
 def start_live_inference():
-    pathSavedImages = request.form.get('pathSavedImages', 'saved_images')
-    path = Path(pathSavedImages) # TODO: NATHAN update this so can save to specific folder
-    if not path.exists():
-        path.mkdir(parents=True, exist_ok=True)
+    # USED IF WANT TO SAVE IMAGES TO SPECIFIC FOLDER SPECIFIED BY USER
+    # pathSavedImages = request.form.get('pathSavedImages', 'saved_images')
+    # path = Path(pathSavedImages)
+    # if not path.exists():
+    #     path.mkdir(parents=True, exist_ok=True)
 
-    threading.Thread(target=live_camera_inference, args=(pathSavedImages,)).start()
+    # Save images to default location on container image mount
+    save_path = Path(os.environ.get("SAVE_PATH", "/app/saved_images")) # get the save path on the container
+    save_path.mkdir(parents=True, exist_ok=True)
+
+    threading.Thread(target=live_camera_inference, args=(save_path,)).start()
     return jsonify({"status": "Live inference started"})
 
 if __name__ == '__main__':
-    load_model("custom")  # TODO: CHANGE THE MODEL U WANT TO LOAD HERE
-    app.run(host="0.0.0.0", port=5000)
+    load_model()
+    app.run(host="0.0.0.0", port=5000) # TODO: NATHAN UPDATE so doesn't use flask server for prod
