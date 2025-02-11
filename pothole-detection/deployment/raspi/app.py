@@ -72,8 +72,9 @@ def index():
 @app.route('/start_live_inference', methods=['POST'])
 def start_live_inference():
     pathSavedImages = request.form.get('pathSavedImages', 'saved_images')
-    if not os.path.exists(pathSavedImages):
-        os.makedirs(pathSavedImages)
+    path = Path(pathSavedImages)
+    if not path.exists():
+        path.mkdir(parents=True, exist_ok=True)
 
     threading.Thread(target=live_camera_inference, args=(pathSavedImages,)).start()
     return jsonify({"status": "Live inference started"})
