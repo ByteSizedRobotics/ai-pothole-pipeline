@@ -1,26 +1,28 @@
 # ai-pothole-models
 
-## Classification Model
-To run docker container
-
-- login to docker in terminal (docker login)
-- pull the image (docker pull ngawargy/pothole-classifier-app:latest)
-- run (docker run -p 5000:5000 ngawargy/pothole-classifier-app:latest)
-- go to http://localhost:5000 to see the app
-
-
-To deploy flask app.py on local web server without Docker (might need to install pip dependencies 1st):
+## Local Classification Model
+#### 1) Deploy flask local_app.py on local web server without Docker 
+(need to install dependencies 1st.. see Setup Virtual Env Steps)
 
 - cd to deployment\local-app
-- python app.py
+- python local_app.py
 - go to the specified web address (ex: http://127.0.0.1:5000/)
 
-To run it locally (not on web server but just as python script)
+#### 2) Running python script locally (not on web server but just as python script)
 - cd to deployment\testing
 - python local-model-testing.py
 
+## Docker Classification Model
+Only the live inference with video is done in the container due to permission/access complexities for providing access to host files/folder within the container. For now, a bind mount is used as the location to share access between the host and the container for the detected/saved images. 
+#### 1) Building and Pushing Docker Container
+- docker buildx build --platform linux/arm64 -t [dockerUSERNAME]/pothole-classifier-app-arm64 .
+- docker push [dockerUSERNAME]/pothole-classifier-app-arm64
 
-## Setup Virtual Env and install dependencies:
+#### 2) Deploy app.py on Docker Container on Raspberry Pi 
+- docker pull --platform linux/arm64 ngawargy/pothole-classifier-app-arm64
+- docker run -d --name flask-pothole --device=/dev/video0 -p 5000:5000 -v [PATH ON HOST TO SAVE IMAGES]:/app/saved_images your_image ngawargy/pothole-classifier-app-arm64
+
+## Setup Virtual Env and install dependencies
 
 - python -m venv venv
 
