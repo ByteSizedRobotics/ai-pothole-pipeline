@@ -1,7 +1,6 @@
 train: ../pothole-detection/datasets/2-potholes-only/clean/train/images # path to training images
 val: ../pothole-detection/datasets/2-potholes-only/clean/valid/images # path to validation images
 
-nc: 1 # only 1 associated class per image
 # Classes
 names:
   0: person

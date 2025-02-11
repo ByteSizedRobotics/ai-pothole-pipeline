@@ -16,7 +16,7 @@ model = None
 def load_model(model_type):
     global model
     if model_type == "custom":
-        model = torch.hub.load('ultralytics/yolov5', 'custom', path='../../train-runs/2025-02-02_yolov5s/run/weights/best.pt')
+        model = torch.hub.load('ultralytics/yolov5', 'custom', path='best_20250210.pt')
     elif model_type == "yolo5s":
         model = torch.hub.load('ultralytics/yolov5', 'yolov5s', pretrained=True)
     elif model_type == "yolo5m":

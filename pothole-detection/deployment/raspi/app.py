@@ -46,7 +46,7 @@ def live_camera_inference(save_path):
         results.render()
         frame = results.ims[0]
 
-        cv2.imshow('YOLOv5 Live', frame)
+        # cv2.imshow('YOLOv5 Live', frame)
 
         threading.Thread(target=save_pictures, args=(frame, results, save_path)).start()
 
