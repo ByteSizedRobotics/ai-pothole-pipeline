@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, jsonify
-import os
+from pathlib import Path
 import cv2
 import torch
 import time
@@ -57,24 +57,13 @@ def save_pictures(frame, results, pathSavedImages):
         save_image = any(det[4] > CONFIDENCE_THRESHOLD for det in detections)
 
         if save_image:
-            filename = os.path.join(pathSavedImages, f"capture_{int(current_time)}.jpg")
+            base_path = Path(pathSavedImages)
+            image_name = Path(f"capture_{int(current_time)}.jpg")
+            filename = base_path / image_name
             cv2.imwrite(filename, frame)
             print(f"Image saved: {filename}")
 
         last_saved_time = current_time  # Update timestamp
-
-# PERFORMS INFERENCE ON IMAGES IN A FOLDER
-def image_inference(dataset_path):
-    for filename in os.listdir(dataset_path):
-        if filename.endswith(".jpg") or filename.endswith(".png"):
-            image_path = os.path.join(dataset_path, filename)
-            image = cv2.imread(image_path)
-
-            results = model(image)
-
-            if results.xyxy[0].shape[0] > 0:
-                results.show()
-    cv2.destroyAllWindows()
 
 @app.route('/')
 def index():

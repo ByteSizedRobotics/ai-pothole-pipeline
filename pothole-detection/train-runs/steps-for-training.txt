@@ -12,6 +12,12 @@
     python train.py --img 640 --batch 16 --epochs 50 --data pothole_dataset.yaml --weights runs/train/exp/weights/best.pt
     (WOULD NEED TO MODIFY THE .YAML FILES TO MATCH THE NUMBER OF CLASSES AND POINT TO NEW DATASET)
 
+Fine tuning:
+- can also train a model from scratch without COCO pretrained weights
+- by default, yolov5 comes out of the box trained on 80 different classes (COCO)
+- can leave the weights blank to specify training from scratch (NOT RECOMMMENDED BETTER TO FINE-TUNE)
+- also can use --patience 10 for auto-early stopping
+
 NOTE: yolo expects a folder structure like below:
 
 pothole-detection/datasets/potholes-only/
