@@ -16,11 +16,11 @@ model = None
 def load_model(model_type):
     global model
     if model_type == "custom":
-        model_path = str(Path("/app/models/best_20250202.pt"))
+        model_path = str(Path("/app/best_20250202.pt"))
         model = torch.hub.load('ultralytics/yolov5', 'custom', path=model_path, force_reload=True)
-    elif model_type == "yolo5s":
-        model_path = str(Path("/app/models/yolov5s.pt"))
-        model = torch.hub.load('ultralytics/yolov5', 'custom', path=model_path, force_reload=True)
+    # elif model_type == "yolo5s":
+    #     model_path = str(Path("/app/yolov5s.pt"))
+    #     model = torch.hub.load('ultralytics/yolov5', 'custom', path=model_path, force_reload=True)
 
 # PERFORMS LIVE VIDEO INFERENCE
 def live_camera_inference(pathSavedImages):
