@@ -25,26 +25,16 @@ Only the live inference with video is done in the container due to permission/ac
 
 ## Setup Virtual Env and install dependencies
 #### WINDOWS
-1) Create venv
-python -m venv venv
-
-2) Activate the venv:
-Set-ExecutionPolicy Unrestricted -Scope Process
-.\venv\Scripts\Activate
-
-4) Install packages
-cd pothole-detection\deployment\local-app
-pip install -r requirements.txt
+1) python -m venv venv
+2) Set-ExecutionPolicy Unrestricted -Scope Process
+3) .\venv\Scripts\Activate
+4) cd pothole-detection\deployment\local-app
+5) pip install -r requirements.txt
 
 #### LINUX
-1) Create venv
-python3 -m venv venv
-  
-2) Activate the venv
-. venv/bin/activate
-
-3) Install required packages:
-    pothole-detection\deployment\local-app
-pip install -r requirements.txt
+1) python3 -m venv venv
+2) . venv/bin/activate
+3) cd pothole-detection\deployment\local-app
+4) pip install -r requirements.txt
 
 NOTE: can deactivate whenever with: deactive
