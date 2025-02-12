@@ -3,10 +3,12 @@
 ## Local Classification Model
 #### 1) Deploy flask local_app.py on local web server without Docker 
 (need to install dependencies 1st.. see Setup Virtual Env Steps)
-
+Works for windows + linux
 - cd to deployment\local-app
 - python local_app.py
 - go to the specified web address (ex: http://127.0.0.1:5000/)
+
+Note for linux: need to connect the usb webcam to the 3.0 usbc port and also works with the ___ Ubuntu account
 
 #### 2) Running python script locally (not on web server but just as python script)
 - cd to deployment\testing
@@ -38,3 +40,5 @@ Only the live inference with video is done in the container due to permission/ac
 4) pip install -r requirements.txt
 
 NOTE: can deactivate whenever with: deactive
+
+
