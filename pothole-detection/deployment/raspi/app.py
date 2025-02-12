@@ -27,7 +27,7 @@ def load_model():
     else:
         pathlib.WindowsPath = pathlib.PosixPath
 
-    model_path = str(Path("/app/models/best_20250210.pt"))
+    model_path = str(Path("/app/models/best_20250211.pt"))
     model = torch.hub.load('ultralytics/yolov5', 'custom', path=model_path, force_reload=True)
 
     #     model_path = str(Path("/app/models/yolov5s.pt"))
