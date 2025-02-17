@@ -103,8 +103,11 @@ def upload():
 
     if file:
         filename = secure_filename(file.filename)
-        file_path = os.path.join('uploads', filename)
-        file.save(file_path)
+        upload_folder = 'output_images'
+        if not os.path.exists(upload_folder):
+            os.makedirs(upload_folder)
+        file_path = os.path.join(upload_folder, filename)
+        #file.save(file_path)
 
         # Perform inference on the uploaded image
         image = cv2.imread(file_path)
@@ -127,5 +130,5 @@ def start_live_inference():
     return jsonify({"status": "Live inference started"})
 
 if __name__ == '__main__':
-    load_model("custom")  # TODO: CHANGE THE MODEL U WANT TO LOAD HERE
+    load_model("yolo5s")  # TODO: CHANGE THE MODEL U WANT TO LOAD HERE
     app.run(host="0.0.0.0", port=5000)

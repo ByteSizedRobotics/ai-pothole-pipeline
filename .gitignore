@@ -6,6 +6,9 @@ __pycache__/
 # C extensions
 *.so
 
+# Ignore datasets folder
+datasets/ 
+
 # Distribution / packaging
 .Python
 build/
@@ -131,7 +134,7 @@ celerybeat.pid
 .env
 .venv
 env/
-#venv/
+venv/
 ENV/
 env.bak/
 venv.bak/
