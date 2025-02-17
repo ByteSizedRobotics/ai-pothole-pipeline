@@ -16,7 +16,7 @@ model = None
 def load_model(model_type):
     global model
     if model_type == "custom":
-        model = torch.hub.load('ultralytics/yolov5', 'custom', path='best_20250210.pt')
+        model = torch.hub.load('ultralytics/yolov5', 'custom', path='models/best_20250202.pt')
     elif model_type == "yolo5s":
         model = torch.hub.load('ultralytics/yolov5', 'yolov5s', pretrained=True)
     elif model_type == "yolo5m":
@@ -49,14 +49,14 @@ def live_camera_inference(pathSavedImages):
     camera.release()
     cv2.destroyAllWindows()
 
-# SAVES PICTURES EVERY 10 SECONDS IF OBJECT DETECTED WITH CONFIDENCE ABOVE THRESHOLD
+# SAVES PICTURES EVERY 5 SECONDS IF OBJECT DETECTED WITH CONFIDENCE ABOVE THRESHOLD
 def save_pictures(frame, results, pathSavedImages):
     CONFIDENCE_THRESHOLD = 0.5
 
     global last_saved_time
     current_time = time.time()
 
-    if (current_time - last_saved_time >= 10):  # save images every 10 seconds if object detected with confidence above 50%
+    if (current_time - last_saved_time >= 5):  # save images every 5 seconds if object detected with confidence above 50%
         detections = results.xyxy[0].cpu().numpy()  # results.xyxy[0] contains all detected objects in format [x1, y1, x2, y2, confidence, class]
 
         # check if any object has confidence above threshold
@@ -95,6 +95,12 @@ def upload():
     if file.filename == '':
         return jsonify({"error": "No selected file"})
 
+    current_time = time.time()
+
+    pathSavedImages = request.form.get('pathSavedImages', 'saved_images')
+    if not os.path.exists(pathSavedImages):
+        os.makedirs(pathSavedImages)
+
     if file:
         filename = secure_filename(file.filename)
         file_path = os.path.join('uploads', filename)
@@ -104,8 +110,10 @@ def upload():
         image = cv2.imread(file_path)
         results = model(image)
         results.render()
-        output_path = os.path.join('static', 'output', filename)
-        cv2.imwrite(output_path, results.ims[0])
+        # output_path = os.path.join('uploads', 'output', filename)
+        # cv2.imwrite(output_path, results.ims[0])
+        filename = os.path.join(pathSavedImages, f"capture_{int(current_time)}.jpg")
+        cv2.imwrite(filename, results.ims[0])
 
         return jsonify({"result": f"/static/output/{filename}"})
 
