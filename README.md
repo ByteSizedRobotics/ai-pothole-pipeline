@@ -47,3 +47,22 @@ need to connect the usb webcam to the 3.0 usbc port and also works with the ___ 
 
 NOTE: can deactivate whenever with: deactive
 
+## Camera IMX-219 setup with Raspi 5
+### Installing libcamera
+Tried the following based on https://forums.raspberrypi.com/viewtopic.php?t=339606, still not working
+
+git clone https://git.libcamera.org/libcamera/libcamera.git
+git clone https://github.com/raspberrypi/libcamera-apps.git
+
+cd libcamera
+meson setup build
+ninja -C build
+sudo ninja -C build install
+
+cd ../../libcamera-apps
+meson setup build
+ninja -C build
+sudo ninja -C build install
+
+### Using camera
+https://www.waveshare.com/wiki/Pi5-IMX219
