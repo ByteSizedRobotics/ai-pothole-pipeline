@@ -7,18 +7,18 @@ import threading
 
 last_saved_time = 0
 
-def load_model(model_type):
+def load_model():
     global model
-    if model_type == "custom":
-        model = torch.hub.load('ultralytics/yolov5', 'custom', path='../../train-runs/2025-02-11_yolov5s_COCO_classes/run/weights/best.pt')
-    elif model_type == "yolo5s":
-        model = torch.hub.load('ultralytics/yolov5', 'yolov5s', pretrained=True)
-    elif model_type == "yolo5m":
-        model = torch.hub.load('ultralytics/yolov5', 'yolov5m', pretrained=True)
-    elif model_type == "yolo5l":
-        model = torch.hub.load('ultralytics/yolov5', 'yolov5l', pretrained=True)
-    elif model_type == "yolo5x":
-        model = torch.hub.load('ultralytics/yolov5', 'yolov5x', pretrained=True)
+    # if model_type == "custom":
+    model = torch.hub.load('ultralytics/yolov5', 'custom', path='../../train-runs/2025-02-18_combined1.0/run/weights/best.pt')
+    # elif model_type == "yolo5s":
+    #     model = torch.hub.load('ultralytics/yolov5', 'yolov5s', pretrained=True)
+    # elif model_type == "yolo5m":
+    #     model = torch.hub.load('ultralytics/yolov5', 'yolov5m', pretrained=True)
+    # elif model_type == "yolo5l":
+    #     model = torch.hub.load('ultralytics/yolov5', 'yolov5l', pretrained=True)
+    # elif model_type == "yolo5x":
+    #     model = torch.hub.load('ultralytics/yolov5', 'yolov5x', pretrained=True)
 
 # PERFORMS LIVE VIDEO INFERENCE
 def live_camera_inference(pathSavedImages):
@@ -81,17 +81,17 @@ def image_inference(dataset_path, model):
 # Testing 
 parser = argparse.ArgumentParser(description="")
 
-parser.add_argument("--modelType", type=str, help="Select Model: custom, yolo5s, yolo5m, yolo5l, yolo5x")
-parser.add_argument("--imageNotVideo", type=int, help="1 = image inference, 0 = video inference")
-parser.add_argument("--pathImageFolder", type=str, help="Path to image folder, only needed if image inference was selected")
-parser.add_argument("--pathSavedImages", type=str, help="Location where you want to save the detected images from the video")
+# parser.add_argument("--modelType", type=str, help="Select Model: custom, yolo5s, yolo5m, yolo5l, yolo5x")
+parser.add_argument("--mode", type=int, help="1 = image inference, 0 = video inference")
+parser.add_argument("--pathImg", type=str, help="Path to image folder, only needed if image inference was selected")
+parser.add_argument("--pathSaveImg", type=str, help="Location where you want to save the detected images from the video")
 args = parser.parse_args()
 
-load_model(args.modelType)
+load_model()
 
-if (args.imageNotVideo == 1):
+if (args.mode == 1):
     # example: 'C:/Users/natha/Documents/GitHub/ai-pothole-models/pothole-detection/datasets/3-potholes-normal-no-annotations/normal'
     # for some reason might need full path
-    image_inference(args.pathImageFolder, model)
+    image_inference(args.pathImg, model)
 else:
-    live_camera_inference(args.pathSavedImages)
+    live_camera_inference(args.pathSaveImg)

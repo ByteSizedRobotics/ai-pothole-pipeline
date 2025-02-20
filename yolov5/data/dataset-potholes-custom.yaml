@@ -1,5 +1,5 @@
-train: ../pothole-detection/datasets/custom/1.0 Wetpotholes/train/images # path to training images
-val: ../pothole-detection/datasets/custom/1.0 Wetpotholes/valid/images # path to validation images
+train: ../pothole-detection/datasets/custom/1.0Combined/train/images # path to training images
+val: ../pothole-detection/datasets/custom/1.0Combined/valid/images # path to validation images
 
 nc: 1 # only 1 associated class per image
 names: ['pothole']
