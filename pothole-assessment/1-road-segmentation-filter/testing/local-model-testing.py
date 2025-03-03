@@ -21,6 +21,7 @@ import matplotlib.patches as mpatches
 # Code adapted from DeepLabV#Plus-Pytorch/predict.py
 
 # Define Cityscapes class colors and labels
+# Labels based on https://github.molgen.mpg.de/mohomran/cityscapes/blob/master/scripts/helpers/labels.py#L55
 cityscapes_classes = {
     0: ('unlabeled', (0, 0, 0)),
     1: ('road', (128, 64, 128)),
