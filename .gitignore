@@ -172,3 +172,7 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+
+# Custom stuff added
+# Ignore weights folder for DeepLabV3Plus (2 big for gitHub)
+/checkpoints
