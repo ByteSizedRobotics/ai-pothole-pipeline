@@ -174,5 +174,5 @@ cython_debug/
 .pypirc
 
 # Custom stuff added
-# Ignore weights folder for DeepLabV3Plus (2 big for gitHub)
-/checkpoints
+# Ignore weights folder for DeepLabV3Plus (2 big for gihub)
+checkpoints/
