@@ -10,7 +10,7 @@ last_saved_time = 0
 def load_model():
     global model
     # if model_type == "custom":
-    model = torch.hub.load('ultralytics/yolov5', 'custom', path='../../train-runs/2025-02-18_combined1.0/run/weights/best.pt')
+    model = torch.hub.load('ultralytics/yolov5', 'custom', path='../../train-runs/2025-03-01_combined1.1/run/weights/best.pt')
     # elif model_type == "yolo5s":
     #     model = torch.hub.load('ultralytics/yolov5', 'yolov5s', pretrained=True)
     # elif model_type == "yolo5m":
@@ -34,7 +34,7 @@ def live_camera_inference(pathSavedImages):
         results.render()
         frame = results.ims[0]
 
-        # frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR) # TODO: NOT SURE IF THIS IS NEEDED
+        frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR) # TODO: still doesn't work
         cv2.imshow('YOLOv5 Live', frame)
 
         threading.Thread(target=save_pictures, args=(frame, results, pathSavedImages)).start()
