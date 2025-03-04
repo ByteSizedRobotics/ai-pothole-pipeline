@@ -7,17 +7,13 @@ from time import time
 from config import Config
 
 # Import models
-from modules.road_segmentation import RoadSegmentation
-from modules.pothole_detection import PotholeDetection
+from modules import RoadSegmentation, PotholeDetection
 
 # Import pipeline stages
-from pipeline.pothole_detection_stage import PotholeDetectionStage
-from pipeline.road_segmentation_stage import RoadSegmentationStage
-from pipeline.pothole_filtering_stage import PotholeFilteringStage
+from pipeline import PotholeDetectionStage, RoadSegmentationStage, PotholeFilteringStage
 
 # Import utilities
-from utils.visualization import visualize_pipeline_results, save_results_as_images
-from utils.io_utils import get_image_files
+from utils import visualize_pipeline_results, save_results_as_images
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Pothole Detection Pipeline')

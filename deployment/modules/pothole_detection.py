@@ -12,7 +12,8 @@ class PotholeDetection:
         Initialization of Pothole Detection YOLOv5s model with custom weights.
         """
         print(f"Initializing Pothole Detector")
-        self.model = torch.hub.load('ultralytics/yolov5', 'custom', path=self.config.POTHOLE_MODEL_PATH).to(self.device)
+        model = torch.hub.load('ultralytics/yolov5', 'custom', path='models/pothole-detection/train-runs/2025-03-01_combined1.1')
+        self.model = model
 
         
     def detect(self, image):

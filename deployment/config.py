@@ -2,17 +2,17 @@
 # project_root/
 # ├── main.py                     # Main script to run the complete pipeline
 # ├── config.py                   # Configuration parameters
-# ├── models/
-# │   ├── __init__.py
+# ├── modules/
 # │   ├── road_segmentation.py       # Road segmentation using DeepLabV3+
-# │   └── pothole_detection.py       # Your pothole detection model
+# │   ├── pothole_detection.py       # Your pothole detection model
+# |   └── models/
+# |       ├── DeepLabV3Plus/
+# |       └── pothole-detection/
 # ├── pipeline/
-# │   ├── __init__.py
 # │   ├── pothole_detection_stage.py      # Stage 1: Detect potholes
 # │   ├── road_segmentation_stage.py      # Stage 2: Road segmentation
 # │   └── pothole_filtering_stage.py      # Stage 3: Filter potholes based on road mask
 # └── utils/
-#     ├── __init__.py
 #     ├── visualization.py        # Visualization utilities
 #     └── io_utils.py             # Input/output utilities
 
@@ -24,7 +24,7 @@ class Config:
     INPUT_PATH = "data/images"
     OUTPUT_PATH = "data/results"
     DEEPLAB_CHECKPOINT = "checkpoints/best_deeplabv3plus_resnet101_cityscapes_os16.pth"
-    POTHOLE_MODEL_PATH = "deployment/modules/models/pothole-detection/train-runs/2025-03-01_combined1.1"  # TODO:NATHAN update this
+    POTHOLE_MODEL_PATH = "models/pothole-detection/train-runs/2025-03-01_combined1.1"  # TODO:NATHAN update this
     
     # DeepLabV3+ configuration
     DEEPLAB_MODEL = "deeplabv3plus_resnet101"

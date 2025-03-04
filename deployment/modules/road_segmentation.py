@@ -4,6 +4,10 @@ import torch
 import torch.nn as nn
 from torchvision import transforms as T
 import numpy as np
+
+import sys
+sys.path.append(os.path.abspath(os.path.dirname(__file__)))  # Adds 'modules/' to sys.path
+
 import models.DeepLabV3Plus.network as network
 import models.DeepLabV3Plus.utils as utils
 from models.DeepLabV3Plus.datasets import VOCSegmentation, Cityscapes
