@@ -1,0 +1,29 @@
+# For potholes-only dataset
+1. Download yolov5 models
+2. Create custom .yaml file for the dataset under yolov5/data/dataset-potholes-only.yaml
+3. Modify the yolo .yaml file for the model u want to use; change # of classes to 1
+4. Run the train command below in the yolov5 folder
+    python train.py --img 640 --batch 16 --epochs 50 --data data/dataset-potholes-only.yaml --weights yolov5s.pt
+5. Training/Validation results included under runs/train folder (can see training logs, plots, etc.)
+6. Automatically saves the best model weights under runs/train as best.pt
+7. Can use detect.py to to use the model to perform inference (just testing purposes)
+    Ex: python detect.py --weights runs/train/exp/weights/best.pt --img 640 --source /path/to/test/images
+8. To finetune model or train on other datasets, can run the following on the best.pt model
+    python train.py --img 640 --batch 16 --epochs 50 --data pothole_dataset.yaml --weights runs/train/exp/weights/best.pt
+    (WOULD NEED TO MODIFY THE .YAML FILES TO MATCH THE NUMBER OF CLASSES AND POINT TO NEW DATASET)
+
+Fine tuning:
+- can also train a model from scratch without COCO pretrained weights
+- by default, yolov5 comes out of the box trained on 80 different classes (COCO)
+- can leave the weights blank to specify training from scratch (NOT RECOMMMENDED BETTER TO FINE-TUNE)
+- also can use --patience 10 for auto-early stopping
+
+NOTE: yolo expects a folder structure like below:
+
+pothole-detection/datasets/potholes-only/
+  ├── train/
+  │   ├── images/   # Training images
+  │   ├── labels/   # Corresponding YOLO-format labels
+  ├── valid/
+  │   ├── images/   # Validation images
+  │   ├── labels/   # Corresponding YOLO-format labels

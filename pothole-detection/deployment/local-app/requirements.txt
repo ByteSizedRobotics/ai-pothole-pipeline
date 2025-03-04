@@ -1,6 +1,0 @@
-flask
-opencv-python
-torch
-werkzeug
-ultralytics
-albumentations

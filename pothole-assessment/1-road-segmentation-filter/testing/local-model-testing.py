@@ -62,7 +62,7 @@ def visualize_segmentation(original_img, segmented_img, class_colors, class_name
     plt.show()
 
 def main():
-    input_path = "test_images" # ADD YOUR PATH TO IMAGE OR DIRECTORY
+    input_path = "test_images/img1.jpg" # ADD YOUR PATH TO IMAGE OR DIRECTORY
     dataset_name = 'cityscapes'
     model_name = 'deeplabv3plus_resnet101'
     separable_conv = False
