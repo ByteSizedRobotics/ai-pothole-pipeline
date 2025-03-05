@@ -8,9 +8,9 @@ import numpy as np
 import sys
 sys.path.append(os.path.abspath(os.path.dirname(__file__)))  # Adds 'modules/' to sys.path
 
-import models.DeepLabV3Plus.network as network
-import models.DeepLabV3Plus.utils as utils
-from models.DeepLabV3Plus.datasets import VOCSegmentation, Cityscapes
+import ai_models.DeepLabV3Plus.network as network
+import ai_models.DeepLabV3Plus.utils as utils
+from ai_models.DeepLabV3Plus.datasets import VOCSegmentation, Cityscapes
 
 class RoadSegmentation:
     def __init__(self, config):

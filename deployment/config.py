@@ -23,8 +23,8 @@ class Config:
     # Paths
     INPUT_PATH = "data/images"
     OUTPUT_PATH = "data/results"
-    DEEPLAB_CHECKPOINT = "checkpoints/best_deeplabv3plus_resnet101_cityscapes_os16.pth"
-    POTHOLE_MODEL_PATH = "models/pothole-detection/train-runs/2025-03-01_combined1.1"  # TODO:NATHAN update this
+    DEEPLAB_CHECKPOINT = "modules/ai_models/DeepLabV3Plus/checkpoints/best_deeplabv3plus_resnet101_cityscapes_os16.pth"
+    POTHOLE_MODEL_PATH = "modules/ai_models/pothole-detection/train-runs/2025-03-01_combined1.1/run/weights/best.pt"  # TODO:NATHAN update this
     
     # DeepLabV3+ configuration
     DEEPLAB_MODEL = "deeplabv3plus_resnet101"

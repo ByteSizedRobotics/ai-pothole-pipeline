@@ -8,7 +8,7 @@ class RoadSegmentationStage:
     def __init__(self, road_segmenter):
         self.segmenter = road_segmenter
     
-    def process(self, stage1_output):
+    def process(self, image_path):
         """
         Process the output from stage 1 to segment the road.
         
@@ -20,7 +20,6 @@ class RoadSegmentationStage:
             - 'road_mask': Binary road mask
             - 'full_segmentation': Complete segmentation result
         """
-        image_path = stage1_output['image_path']
         print(f"[Stage 2] Segmenting road in {os.path.basename(image_path)}")
         
         # Get the image from stage 1
@@ -28,10 +27,5 @@ class RoadSegmentationStage:
 
         # Perform road segmentation
         road_mask, full_segmentation = self.segmenter.segment_image(image)
-        
-        # Add results to output
-        result = stage1_output.copy()
-        result['road_mask'] = road_mask
-        result['full_segmentation'] = full_segmentation
-        
-        return result
+
+        return {'road_mask': road_mask, 'full_segmentation': full_segmentation}

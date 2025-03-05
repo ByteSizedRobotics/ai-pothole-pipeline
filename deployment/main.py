@@ -2,6 +2,7 @@
 import os
 import argparse
 from time import time
+from PIL import Image
 
 # Import configuration
 from config import Config
@@ -13,7 +14,8 @@ from modules import RoadSegmentation, PotholeDetection
 from pipeline import PotholeDetectionStage, RoadSegmentationStage, PotholeFilteringStage
 
 # Import utilities
-from utils import visualize_pipeline_results, save_results_as_images
+from utils_lib.visualization import visualize_pipeline_results, save_results_as_images
+from utils_lib.io_utils import get_image_files
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Pothole Detection Pipeline')
@@ -68,38 +70,46 @@ def main():
         # Run through pipeline stages
         try:
             # Stage 1: Pothole Detection
-            stage1_output = detection_stage.process(img_path)
+            pothole_detections = detection_stage.process(img_path)
             
             # Stage 2: Road Segmentation
-            stage2_output = segmentation_stage.process(stage1_output)
+            road_segmentation = segmentation_stage.process(img_path)
             
             # Stage 3: Filter Potholes
-            stage3_output = filtering_stage.process(stage2_output)
+            filtered_detections = filtering_stage.process(img_path, pothole_detections, road_segmentation)
             
             # Process results
             process_time = time() - start_time
             print(f"Processing completed in {process_time:.2f} seconds")
             
             # Print summary
-            all_potholes = len(stage3_output['filtered_detections'])
-            road_potholes = sum(1 for _, _, is_on_road, _ in stage3_output['filtered_detections'] if is_on_road)
+            all_potholes = len(filtered_detections)
+            road_potholes = sum(1 for _, _, is_on_road in filtered_detections if is_on_road)
             print(f"Found {road_potholes} potholes on the road out of {all_potholes} detected")
             
             # Generate output filename
             basename = os.path.splitext(os.path.basename(img_path))[0]
             
+            pipeline_output = {
+                'image': Image.open(img_path).convert('RGB'),
+                'image_path': img_path,
+                'full_segmentation': road_segmentation['full_segmentation'],
+                'road_mask': road_segmentation['road_mask'],
+                'filtered_detections': filtered_detections
+            }
+
             # Visualize if requested
             if args.visualize:
-                visualize_pipeline_results(stage3_output)
+                visualize_pipeline_results(pipeline_output)
             
             # Save results if requested
             if args.save_images:
                 # Save visualization
                 vis_path = os.path.join(Config.OUTPUT_PATH, f"{basename}_visualization.png")
-                visualize_pipeline_results(stage3_output, save_path=vis_path)
+                visualize_pipeline_results(pipeline_output, save_path=vis_path)
                 
                 # Save individual result images
-                save_results_as_images(stage3_output, Config.OUTPUT_PATH)
+                save_results_as_images(pipeline_output, Config.OUTPUT_PATH)
                 
                 print(f"Results saved to {Config.OUTPUT_PATH}")
                 
@@ -108,7 +118,5 @@ def main():
             import traceback
             traceback.print_exc()
     
-    print("\nAll images processed!")
-
 if __name__ == "__main__":
     main()

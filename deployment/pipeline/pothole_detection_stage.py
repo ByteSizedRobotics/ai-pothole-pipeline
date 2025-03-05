@@ -30,10 +30,7 @@ class PotholeDetectionStage:
 
             # Detect potholes
             detections = self.detector.detect(image)
-        
+
             # Return results
-            return {
-                'image': image,
-                'detections': detections,
-                'image_path': image_path
-            }
+            return detections
+            

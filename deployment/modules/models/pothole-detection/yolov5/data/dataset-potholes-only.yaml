@@ -1,5 +1,0 @@
-train: ../pothole-detection/datasets/1-potholes-only/train/images # path to training images
-val: ../pothole-detection/datasets/1-potholes-only/valid/images # path to validation images
-
-nc: 1 # only 1 associated class per image
-names: ['pothole']
