@@ -84,7 +84,7 @@ def main():
             
             # Print summary
             all_potholes = len(filtered_detections)
-            road_potholes = sum(1 for _, _, is_on_road in filtered_detections if is_on_road)
+            road_potholes = sum(1 for _, _, is_on_road, _ in filtered_detections if is_on_road)
             print(f"Found {road_potholes} potholes on the road out of {all_potholes} detected")
             
             # Generate output filename

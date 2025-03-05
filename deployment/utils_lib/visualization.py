@@ -95,17 +95,17 @@ def visualize_pipeline_results(pipeline_output, save_path=None):
     ax[1, 1].axis('off')
     
     # Draw filtered pothole bounding boxes
-    for confidence, bbox, is_on_road, overlap in filtered_detections:
+    for confidence, bbox, is_on_road, _ in filtered_detections:
         x1, y1, x2, y2 = bbox
         
         if is_on_road:
             # Green for potholes on road
             color = 'green'
-            label = f"On Road ({overlap:.1f}%)"
+            label = f"On Road (confidence: {confidence:.2f})"
         else:
             # Red for potholes not on road
             color = 'red'
-            label = f"Not on Road ({overlap:.1f}%)"
+            label = f"Not on Road (confidence: {confidence:.2f})"
         
         rect = plt.Rectangle((x1, y1), x2-x1, y2-y1, fill=False, 
                             edgecolor=color, linewidth=2)
@@ -174,7 +174,8 @@ def save_results_as_images(pipeline_output, output_dir):
         f.write(f"Potholes not on road: {len(filtered_detections) - on_road_count}\n\n")
         
         f.write("Detailed results:\n")
-        for i, (confidence, bbox, is_on_road, overlap) in enumerate(filtered_detections):
+        for i, (confidence, bbox, is_on_road, num_corner_on_road) in enumerate(filtered_detections):
             status = "ON road" if is_on_road else "NOT on road"
             f.write(f"Pothole {i+1}: {status} (confidence: {confidence:.2f})\n")
             f.write(f"    Bounding box: {bbox}\n")
+            f.write(f"    Number of corners on road: {num_corner_on_road}\n")

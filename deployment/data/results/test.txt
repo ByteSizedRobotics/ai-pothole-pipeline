@@ -1,0 +1,21 @@
+Results for C:\Users\natha\Documents\GitHub\ai-pothole-models\deployment\data\images\img0.jpg
+Total potholes detected: 5
+Potholes on road: 2
+Potholes not on road: 3
+
+Detailed results:
+Pothole 1: ON road (confidence: 0.87)
+    Bounding box: [1677.91552734375, 1480.3787841796875, 2204.4111328125, 1646.45947265625]
+    Number of corners on road: 4
+Pothole 2: NOT on road (confidence: 0.68)
+    Bounding box: [3033.634765625, 2426.548828125, 4022.691650390625, 3024.0]
+    Number of corners on road: 2
+Pothole 3: ON road (confidence: 0.41)
+    Bounding box: [1977.1456298828125, 1211.77734375, 2601.2607421875, 1293.4029541015625]
+    Number of corners on road: 4
+Pothole 4: NOT on road (confidence: 0.34)
+    Bounding box: [266.77349853515625, 14.723519325256348, 4032.0, 855.41552734375]
+    Number of corners on road: 1
+Pothole 5: NOT on road (confidence: 0.31)
+    Bounding box: [21.611452102661133, 1570.10888671875, 3534.78369140625, 3024.0]
+    Number of corners on road: 2

@@ -85,7 +85,7 @@ class RoadSegmentation:
             predictions = outputs.max(1)[1].cpu().numpy()[0]  # (H, W)
             
             # Create road mask (class index 1 is road in Cityscapes)
-            road_mask = (predictions == 1).astype(np.uint8)
+            road_mask = (predictions == 0).astype(np.uint8)
             
             return road_mask, predictions
     
