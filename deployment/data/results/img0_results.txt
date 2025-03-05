@@ -4,18 +4,23 @@ Potholes on road: 4
 Potholes not on road: 1
 
 Detailed results:
-Pothole 1: ON road (confidence: 0.87)
-    Bounding box: [1677.91552734375, 1480.3787841796875, 2204.4111328125, 1646.45947265625]
-    Number of corners on road: 4
-Pothole 2: ON road (confidence: 0.68)
-    Bounding box: [3033.634765625, 2426.548828125, 4022.691650390625, 3024.0]
-    Number of corners on road: 4
-Pothole 3: ON road (confidence: 0.41)
-    Bounding box: [1977.1456298828125, 1211.77734375, 2601.2607421875, 1293.4029541015625]
-    Number of corners on road: 4
-Pothole 4: NOT on road (confidence: 0.34)
-    Bounding box: [266.77349853515625, 14.723519325256348, 4032.0, 855.41552734375]
-    Number of corners on road: 1
-Pothole 5: ON road (confidence: 0.31)
-    Bounding box: [21.611452102661133, 1570.10888671875, 3534.78369140625, 3024.0]
-    Number of corners on road: 4
+Pothole 1: ON road
+    Bounding box: [1677.92, 1480.38, 2204.41, 1646.46]
+    Detection Confidence: 0.87
+    % Pixels in box which are road: 0.66
+Pothole 2: ON road
+    Bounding box: [3033.63, 2426.55, 4022.69, 3024.0]
+    Detection Confidence: 0.68
+    % Pixels in box which are road: 0.87
+Pothole 3: ON road
+    Bounding box: [1977.15, 1211.78, 2601.26, 1293.4]
+    Detection Confidence: 0.41
+    % Pixels in box which are road: 0.97
+Pothole 4: NOT on road
+    Bounding box: [266.77, 14.72, 4032.0, 855.42]
+    Detection Confidence: 0.34
+    % Pixels in box which are road: 0.02
+Pothole 5: ON road
+    Bounding box: [21.61, 1570.11, 3534.78, 3024.0]
+    Detection Confidence: 0.31
+    % Pixels in box which are road: 0.94

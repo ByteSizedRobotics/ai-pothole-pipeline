@@ -33,7 +33,7 @@ class Config:
     NUM_CLASSES = 19  # Cityscapes
     
     # Pothole filtering configuration
-    MIN_OVERLAP_THRESHOLD = 50.0  # Minimum percentage overlap to consider pothole on road
+    MIN_PIXELS_ROAD_THRESHOLD = 0.50  # Minimum percentage of pixels in bounding box area to be considered as a pothole on the road
     
     # Device configuration
     GPU_ID = "0"

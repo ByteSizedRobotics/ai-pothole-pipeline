@@ -29,5 +29,5 @@ class PotholeDetection:
         """       
         detections = self.model(image)
         
-        print(f"Detected {len(detections)} potholes (placeholder)")
+        # print(f"Detected {len(detections.xyxy[0].tolist())} potholes (placeholder)")
         return detections

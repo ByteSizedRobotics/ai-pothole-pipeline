@@ -14,19 +14,15 @@ from modules import RoadSegmentation, PotholeDetection
 from pipeline import PotholeDetectionStage, RoadSegmentationStage, PotholeFilteringStage
 
 # Import utilities
-from utils_lib.visualization import visualize_pipeline_results, save_results_as_images
+from utils_lib.visualization import visualize_pipeline_results, create_results_file
 from utils_lib.io_utils import get_image_files
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Pothole Detection Pipeline')
     parser.add_argument('--input', type=str, default=None,
-                        help='Path to input image or directory')
+                        help='Path to input image or directory') # by default it is set to data/images
     parser.add_argument('--output', type=str, default=None,
-                        help='Path to output directory')
-    parser.add_argument('--visualize', action='store_true',
-                        help='Visualize results')
-    parser.add_argument('--save_images', action='store_true',
-                        help='Save result images')
+                        help='Path to output directory') # by default it is set to data/results
     return parser.parse_args()
 
 def main():
@@ -87,32 +83,20 @@ def main():
             road_potholes = sum(1 for _, _, is_on_road, _ in filtered_detections if is_on_road)
             print(f"Found {road_potholes} potholes on the road out of {all_potholes} detected")
             
-            # Generate output filename
-            basename = os.path.splitext(os.path.basename(img_path))[0]
-            
             pipeline_output = {
                 'image': Image.open(img_path).convert('RGB'),
                 'image_path': img_path,
                 'full_segmentation': road_segmentation['full_segmentation'],
                 'road_mask': road_segmentation['road_mask'],
-                'filtered_detections': filtered_detections
+                'filtered_detections': filtered_detections,
+                'detections' : pothole_detections
             }
 
-            # Visualize if requested
-            if args.visualize:
-                visualize_pipeline_results(pipeline_output)
+            # save pipeline results and create results .txt file
+            visualize_pipeline_results(pipeline_output, Config.OUTPUT_PATH)
+            create_results_file(filtered_detections, Config.OUTPUT_PATH, img_path)
+            print(f"Results saved to {Config.OUTPUT_PATH}")
             
-            # Save results if requested
-            if args.save_images:
-                # Save visualization
-                vis_path = os.path.join(Config.OUTPUT_PATH, f"{basename}_visualization.png")
-                visualize_pipeline_results(pipeline_output, save_path=vis_path)
-                
-                # Save individual result images
-                save_results_as_images(pipeline_output, Config.OUTPUT_PATH)
-                
-                print(f"Results saved to {Config.OUTPUT_PATH}")
-                
         except Exception as e:
             print(f"Error processing {img_path}: {str(e)}")
             import traceback
