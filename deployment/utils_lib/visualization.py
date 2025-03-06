@@ -70,7 +70,10 @@ def visualize_pipeline_results(pipeline_output, save_path):
         rect = plt.Rectangle((x1, y1), x2-x1, y2-y1, fill=False, 
                             edgecolor='blue', linewidth=2)
         ax[0, 1].add_patch(rect)
-        label = f"{classType} (confidence: {confidence:.2f})"
+        if classType == 0:
+            label = f"Pothole (confidence: {confidence:.2f})"
+        else:
+            label = f"{classType} (confidence: {confidence:.2f})"
         ax[0, 1].text(x1, y1-5, label, color='blue', fontsize=8,
                   bbox=dict(facecolor='white', alpha=0.7))
     
@@ -162,7 +165,10 @@ def visualize_pipeline_results(pipeline_output, save_path):
         rect = plt.Rectangle((x1, y1), x2-x1, y2-y1, fill=False, 
                             edgecolor='blue', linewidth=2)
         ax2.add_patch(rect)
-        label = f"{classType} (confidence: {confidence:.2f})"
+        if classType == 0:
+            label = f"Pothole (confidence: {confidence:.2f})"
+        else:
+            label = f"{classType} (confidence: {confidence:.2f})"
         ax2.text(x1, y1-5, label, color='blue', fontsize=8,
                  bbox=dict(facecolor='white', alpha=0.7))
     
