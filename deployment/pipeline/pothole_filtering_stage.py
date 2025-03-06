@@ -60,6 +60,10 @@ class PotholeFilteringStage:
             total_num_points = 0
             num_points_on_road = 0
             step = 20
+
+            # TODO: NATHAN calculate total area of bounding box to determine step to use
+            # total_area = (x2-x1)*(y2-y1)
+
             for x in range(x1, x2, step):
                 for y in range(y1, y2, step):
                     x = x-1
