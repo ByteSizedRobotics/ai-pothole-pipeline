@@ -68,6 +68,8 @@ def main():
             # Stage 1: Pothole Detection
             pothole_detections = detection_stage.process(img_path)
             
+            # TODO: NATHAN add a check here to see if there are any potholes detected
+            # if no potholes detected => no need to do segmentation and filtering
             # Stage 2: Road Segmentation
             road_segmentation = segmentation_stage.process(img_path)
             

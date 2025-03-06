@@ -1,4 +1,4 @@
-Results for C:\Users\natha\Documents\GitHub\ai-pothole-models\deployment\data\images\img0.jpg
+Results for data/images\img0.jpg
 Total potholes detected: 5
 Potholes on road: 4
 Potholes not on road: 1
