@@ -1,19 +1,11 @@
-# main.py
 import os
 import argparse
 from time import time
 from PIL import Image
-
-# Import configuration
-from config import Config
-
-# Import models
+from config import Config # config file
+# import models, pipeline stages, visualization functions and utils required by DeepLabV3+
 from modules import RoadSegmentation, PotholeDetection
-
-# Import pipeline stages
 from pipeline import PotholeDetectionStage, RoadSegmentationStage, PotholeFilteringStage
-
-# Import utilities
 from utils_lib.visualization import visualize_pipeline_results, create_results_file
 from utils_lib.io_utils import get_image_files
 
@@ -26,44 +18,36 @@ def parse_args():
     return parser.parse_args()
 
 def main():
-    # Parse command line arguments
     args = parse_args()
     
-    # Update config with command line arguments
-    if args.input:
+    if args.input: # if input/output are provided, update the config
         Config.INPUT_PATH = args.input
     if args.output:
         Config.OUTPUT_PATH = args.output
     
-    # Create output directory
     Config.create_dirs()
     
-    # Initialize models
     print("Initializing models...")
     road_segmenter = RoadSegmentation(Config)
     pothole_detector = PotholeDetection(Config)
     
-    # Create pipeline stages
+    # PIPELINE STAGES
     print("Setting up pipeline stages...")
     detection_stage = PotholeDetectionStage(pothole_detector)
     segmentation_stage = RoadSegmentationStage(road_segmenter)
     filtering_stage = PotholeFilteringStage(Config)
     
-    # Get list of images to process
+    # 
     image_files = get_image_files(Config.INPUT_PATH)
-    
     if not image_files:
         print(f"No images found in {Config.INPUT_PATH}")
         return
-    
     print(f"Found {len(image_files)} images to process")
     
     # Process each image through the pipeline
     for img_path in image_files:
         print(f"\nProcessing {os.path.basename(img_path)}...")
         start_time = time()
-        
-        # Run through pipeline stages
         try:
             # Stage 1: Pothole Detection
             pothole_detections = detection_stage.process(img_path)
@@ -76,7 +60,6 @@ def main():
             # Stage 3: Filter Potholes
             filtered_detections = filtering_stage.process(img_path, pothole_detections, road_segmentation)
             
-            # Process results
             process_time = time() - start_time
             print(f"Processing completed in {process_time:.2f} seconds")
             

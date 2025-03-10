@@ -1,4 +1,3 @@
-# models/pothole_detector.py
 import torch
 
 class PotholeDetection:
@@ -9,7 +8,7 @@ class PotholeDetection:
         
     def _init_model(self):
         """
-        Initialization of Pothole Detection YOLOv5s model with custom weights.
+        Initialization of Pothole Detection YOLOv5s model with custom trained weights.
         """
         print(f"Initializing Pothole Detector")
         model = torch.hub.load('ultralytics/yolov5', 'custom', path=self.config.POTHOLE_MODEL_PATH).to(self.device)
@@ -18,14 +17,8 @@ class PotholeDetection:
         
     def detect(self, image):
         """
-        Detect potholes in an image.
-        
-        Args:
-            image: PIL Image
-            
-        Returns:
-            List of pothole detections, where each detection is a tuple:
-            (confidence, [x1, y1, x2, y2])
+        Detect the potholes in the given image. This returns a list of detections, where each detection 
+        is in the format: (confidence, [x1, y1, x2, y2])
         """       
         detections = self.model(image)
         

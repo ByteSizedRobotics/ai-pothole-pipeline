@@ -1,4 +1,3 @@
-# pipeline/filtering_stage.py
 import os
 import numpy as np
 
@@ -9,17 +8,6 @@ class PotholeFilteringStage:
         self.min_road_threshold = config.MIN_PIXELS_ROAD_THRESHOLD
     
     def process(self, img_path, pothole_detections, road_segmentations):
-        """
-        Process the output from stage 2 to filter potholes.
-        
-        Args:
-            stage2_output: Output dictionary from stage 2
-            
-        Returns:
-            Dictionary containing all items from stage2_output plus:
-            - 'filtered_detections': List of filtered detections with format 
-              [(confidence, bbox, is_on_road), ...]
-        """
         image_path = img_path
         print(f"[Stage 3] Filtering potholes in {os.path.basename(image_path)}")
         

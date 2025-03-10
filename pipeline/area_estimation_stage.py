@@ -2,7 +2,7 @@ import os
 from PIL import Image
 
 class RoadSegmentationStage:
-    """Stage 2: Segment the road in the image"""
+    """Stage 4: Estimate the area of the detected potholes"""
     
     def __init__(self, road_segmenter):
         self.segmenter = road_segmenter

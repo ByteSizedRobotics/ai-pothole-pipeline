@@ -1,4 +1,3 @@
-# models/road_segmenter.py
 import os
 import torch
 import torch.nn as nn
@@ -12,11 +11,12 @@ import ai_models.DeepLabV3Plus.network as network
 import ai_models.DeepLabV3Plus.utils as utils
 from ai_models.DeepLabV3Plus.datasets import VOCSegmentation, Cityscapes
 
+# THIS SCRIPT IS BASED OFF OF DEEPLABV3+ predict.py script in the DeepLabV3Plus repository
+# https://github.com/VainF/DeepLabV3Plus-Pytorch/blob/master/predict.py
 class RoadSegmentation:
     def __init__(self, config):
         self.config = config
         
-        # Set up the CUDA device
         os.environ['CUDA_VISIBLE_DEVICES'] = config.GPU_ID
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         
@@ -28,7 +28,6 @@ class RoadSegmentation:
             self.num_classes = 19
             self.decode_fn = Cityscapes.decode_target
         
-        # Initialize the model
         self._init_model()
         
         # Initialize transformations
@@ -46,7 +45,7 @@ class RoadSegmentation:
         )
         utils.set_bn_momentum(self.model.backbone, momentum=0.01)
         
-        # Load checkpoint if available
+        # load checkpoint => using CITYSCAPES WEIGHTS for road segmentation
         if os.path.isfile(self.config.DEEPLAB_CHECKPOINT):
             checkpoint = torch.load(
                 self.config.DEEPLAB_CHECKPOINT, 
@@ -59,7 +58,6 @@ class RoadSegmentation:
         else:
             print("[!] Warning: No checkpoint found for segmentation model")
         
-        # Wrap model with DataParallel and move to device
         self.model = nn.DataParallel(self.model)
         self.model.to(self.device)
         self.model.eval()
