@@ -74,7 +74,7 @@ def visualize_pipeline_results(pipeline_output, save_path):
             label = f"Pothole (confidence: {confidence:.2f})"
         else:
             label = f"{classType} (confidence: {confidence:.2f})"
-        ax[0, 1].text(x1, y1-5, label, color='blue', fontsize=8,
+        ax[0, 1].text(x1, y1-35, label, color='blue', fontsize=8,
                   bbox=dict(facecolor='white', alpha=0.7))
     
     # 2. Full Segmentation
@@ -132,7 +132,7 @@ def visualize_pipeline_results(pipeline_output, save_path):
         rect = plt.Rectangle((x1, y1), x2-x1, y2-y1, fill=False, 
                             edgecolor=color, linewidth=4)
         ax[1, 2].add_patch(rect)
-        ax[1, 2].text(x1, y1-5, label, color=color, fontsize=10,
+        ax[1, 2].text(x1, y1-35, label, color=color, fontsize=10,
                   bbox=dict(facecolor='white', alpha=0.7))
     
     plt.tight_layout()
@@ -169,7 +169,7 @@ def visualize_pipeline_results(pipeline_output, save_path):
             label = f"Pothole (confidence: {confidence:.2f})"
         else:
             label = f"{classType} (confidence: {confidence:.2f})"
-        ax2.text(x1, y1-5, label, color='blue', fontsize=8,
+        ax2.text(x1, y1-35, label, color='blue', fontsize=8,
                  bbox=dict(facecolor='white', alpha=0.7))
     
     plt.savefig(os.path.join(save_path, f'{image_name}_original_detections.png'), dpi=300, bbox_inches='tight')
@@ -211,7 +211,7 @@ def visualize_pipeline_results(pipeline_output, save_path):
         rect = plt.Rectangle((x1, y1), x2-x1, y2-y1, fill=False, 
                             edgecolor=color, linewidth=4)
         ax5.add_patch(rect)
-        ax5.text(x1, y1-5, label, color=color, fontsize=10,
+        ax5.text(x1, y1-35, label, color=color, fontsize=10,
                  bbox=dict(facecolor='white', alpha=0.7))
     
     plt.savefig(os.path.join(save_path, f'{image_name}_filtered_detections.png'), dpi=300, bbox_inches='tight')

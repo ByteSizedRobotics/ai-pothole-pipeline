@@ -1,15 +1,18 @@
 import os
-import numpy as np
 
 class PotholeFilteringStage:
-    """Stage 3: Filter pothole detections based on road segmentation"""
+    """Stage 3: Filter pothole detections based on road segmentation
+       
+       Filtering is done by checking if majority of sampled pixel points in a given
+       pothole bounding box are classified as road. If >= MIN_PIXELS_ROAD_THRESHOLD
+       are on the road => pothole is considered to be on the road.
+    """
     
     def __init__(self, config):
         self.min_road_threshold = config.MIN_PIXELS_ROAD_THRESHOLD
     
     def process(self, img_path, pothole_detections, road_segmentations):
-        image_path = img_path
-        print(f"[Stage 3] Filtering potholes in {os.path.basename(image_path)}")
+        print(f"[Stage 3] Filtering potholes in {os.path.basename(img_path)}")
         
         # Get road mask and detections from previous stages
         # full_segmentation = road_segmentations['full_segmentation']
@@ -44,7 +47,7 @@ class PotholeFilteringStage:
             
             # Better method
             # checks a range of points within the bounding box
-            # if minimum 75% are = road => assume pothole is on the road
+            # if minimum 60% are = road => assume pothole is on the road
             total_num_points = 0
             num_points_on_road = 0
             step = 20

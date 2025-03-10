@@ -5,7 +5,7 @@ from PIL import Image
 from config import Config # config file
 # import models, pipeline stages, visualization functions and utils required by DeepLabV3+
 from modules import RoadSegmentation, PotholeDetection
-from pipeline import PotholeDetectionStage, RoadSegmentationStage, PotholeFilteringStage
+from pipeline import PotholeDetectionStage, RoadSegmentationStage, PotholeFilteringStage, AreaEstimationStage
 from utils_lib.visualization import visualize_pipeline_results, create_results_file
 from utils_lib.io_utils import get_image_files
 
@@ -36,8 +36,8 @@ def main():
     detection_stage = PotholeDetectionStage(pothole_detector)
     segmentation_stage = RoadSegmentationStage(road_segmenter)
     filtering_stage = PotholeFilteringStage(Config)
+    area_estimation_stage = AreaEstimationStage(Config)
     
-    # 
     image_files = get_image_files(Config.INPUT_PATH)
     if not image_files:
         print(f"No images found in {Config.INPUT_PATH}")
@@ -59,6 +59,9 @@ def main():
             
             # Stage 3: Filter Potholes
             filtered_detections = filtering_stage.process(img_path, pothole_detections, road_segmentation)
+
+            # Stage 4: Area Estimation
+            pothole_areas = area_estimation_stage.process(img_path, filtered_detections)
             
             process_time = time() - start_time
             print(f"Processing completed in {process_time:.2f} seconds")
