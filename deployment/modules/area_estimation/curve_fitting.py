@@ -29,15 +29,6 @@ def inverse_quadratic(x, a, b, c):
     """Inverse quadratic: y = a / (b + c*x²)"""
     return a / (b + c*x**2)
 
-def piecewise_power_rational(x, a, b, c, d, e, x0):
-    """Piecewise function with power law for x<x0 and rational for x>=x0"""
-    result = np.zeros_like(x, dtype=float)
-    mask1 = x < x0
-    mask2 = x >= x0
-    result[mask1] = a * x[mask1]**(-b)
-    result[mask2] = c / (d + e*x[mask2])
-    return result
-
 # List of models to try (with initial parameter guesses)
 models = [
     {'name': 'Power Law', 'function': power_law, 'p0': [1e5, 3]},
@@ -46,10 +37,6 @@ models = [
     {'name': 'Rational Function', 'function': rational_function, 'p0': [10, -700, 0.1, 0.0001]},
     {'name': 'Inverse Quadratic', 'function': inverse_quadratic, 'p0': [100, -7e5, 1]},
 ]
-
-# Additional complex model to try separately
-piecewise_model = {'name': 'Piecewise Power-Rational', 'function': piecewise_power_rational, 
-                  'p0': [1e5, 3, 0.1, -700, 0.001, 950]}
 
 # Function to evaluate and plot model fits
 def fit_and_evaluate_model(model, x_data, y_data, extended_x=None):
@@ -91,15 +78,9 @@ for model in models:
     if result:
         results.append(result)
 
-# Try fitting the piecewise model separately
-piecewise_result = fit_and_evaluate_model(piecewise_model, x_data, y_data, extended_x)
-if piecewise_result:
-    results.append(piecewise_result)
-
 # Sort results by goodness of fit (R²)
 results.sort(key=lambda x: x['r2'], reverse=True)
 
-# Create a nice figure for visualization
 plt.figure(figsize=(12, 10))
 
 # Plot the original data points
