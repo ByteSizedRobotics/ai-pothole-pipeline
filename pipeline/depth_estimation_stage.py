@@ -54,16 +54,16 @@ class DepthEstimationStage:
                 normalized_depth = relative_depth / np.sqrt(area) * 1000
                 normalized_depths.append(normalized_depth)
 
+                print('Relative Depth:', relative_depth)
+                print('Normalized Depth:', normalized_depth)
+                print('Max Depth:', max_depth)
+                print('Min Depth:', min_depth, '\n')
+
             else:
                 cropped_potholes.append(None)
                 depth_maps.append(None)
                 relative_depths.append(-1) # -1 means pothole is not on the road
                 normalized_depths.append(-1)
-            
-            print('Relative Depth:', relative_depth)
-            print('Normalized Depth:', normalized_depth)
-            print('Max Depth:', max_depth)
-            print('Min Depth:', min_depth, '\n')
 
         return {
             'cropped_potholes': cropped_potholes,
