@@ -23,28 +23,33 @@ class DepthEstimationStage:
         depth_maps = []
         estimated_depths = []
 
-        for _, bbox, _, _ in filtered_detections:
-            x1, y1, x2, y2 = bbox
-            
-            x1, y1 = max(0, int(x1)), max(0, int(y1)) # make sure x1 and y1 are not negative
-            x2, y2 = min(image.shape[1], int(x2)), min(image.shape[0], int(y2)) # make sure x2 and y2 are within image bounds
-            
-            cropped_pothole = image[y1:y2, x1:x2]
-            cropped_potholes.append(cropped_pothole)
+        for _, bbox, is_on_road, _ in filtered_detections:
+            if is_on_road:
+                x1, y1, x2, y2 = bbox
+                
+                x1, y1 = max(0, int(x1)), max(0, int(y1)) # make sure x1 and y1 are not negative
+                x2, y2 = min(image.shape[1], int(x2)), min(image.shape[0], int(y2)) # make sure x2 and y2 are within image bounds
+                
+                cropped_pothole = image[y1:y2, x1:x2]
+                cropped_potholes.append(cropped_pothole)
 
-            depth_map = self.depth_estimator.detect(cropped_pothole)
-            depth_maps.append(depth_map)
+                depth_map = self.depth_estimator.detect(cropped_pothole)
+                depth_maps.append(depth_map)
 
-            if percentile_filter: # use percentiles to filter out outliers
-                min_depth = np.percentile(depth_map, percentile_low_value)
-                max_depth = np.percentile(depth_map, percentile_high_value)
+                if percentile_filter: # use percentiles to filter out outliers
+                    min_depth = np.percentile(depth_map, percentile_low_value)
+                    max_depth = np.percentile(depth_map, percentile_high_value)
 
-            estimated_depth = max_depth - min_depth
-            print('Estimated Depth:', estimated_depth)
-            print('Max Depth:', max_depth)
-            print('Min Depth:', min_depth)
+                estimated_depth = max_depth - min_depth
+                print('Estimated Depth:', estimated_depth)
+                print('Max Depth:', max_depth)
+                print('Min Depth:', min_depth)
 
-            estimated_depths.append(estimated_depth)
+                estimated_depths.append(estimated_depth)
+            else:
+                cropped_potholes.append(None)
+                depth_maps.append(None)
+                estimated_depths.append(-1) # -1 means pothole is not on the road
 
         return {
             'cropped_potholes': cropped_potholes,
