@@ -1,10 +1,10 @@
 # utils/visualization.py
+import math
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
-from PIL import Image, ImageDraw
+from PIL import Image
 import os
-
 import sys
 sys.path.append(os.path.abspath(os.path.dirname(__file__))) 
 from DeepLabV3Lib import Cityscapes
@@ -33,6 +33,7 @@ cityscapes_classes = {
     19: ('bicycle', (119, 11, 32))
 }
 
+# TODO: NATHAN remove the visualize results part which combines the imgs into 1 figure?
 def visualize_pipeline_results(pipeline_output, save_path):
     """
     Visualize the results of the complete pipeline.
@@ -74,7 +75,7 @@ def visualize_pipeline_results(pipeline_output, save_path):
             label = f"Pothole (confidence: {confidence:.2f})"
         else:
             label = f"{classType} (confidence: {confidence:.2f})"
-        ax[0, 1].text(x1, y1-35, label, color='blue', fontsize=8,
+        ax[0, 1].text(x1, y1-20, label, color='blue', fontsize=8,
                   bbox=dict(facecolor='white', alpha=0.7))
     
     # 2. Full Segmentation
@@ -132,7 +133,7 @@ def visualize_pipeline_results(pipeline_output, save_path):
         rect = plt.Rectangle((x1, y1), x2-x1, y2-y1, fill=False, 
                             edgecolor=color, linewidth=4)
         ax[1, 2].add_patch(rect)
-        ax[1, 2].text(x1, y1-35, label, color=color, fontsize=10,
+        ax[1, 2].text(x1, y1-20, label, color=color, fontsize=10,
                   bbox=dict(facecolor='white', alpha=0.7))
     
     plt.tight_layout()
@@ -150,7 +151,7 @@ def visualize_pipeline_results(pipeline_output, save_path):
     ax1.imshow(image)
     ax1.set_title('Original Image')
     ax1.axis('off')
-    plt.savefig(os.path.join(save_path, f'{image_name}_original_image.png'), dpi=300, bbox_inches='tight')
+    plt.savefig(os.path.join(save_path, f'{image_name}_0_original_image.png'), dpi=300, bbox_inches='tight')
     plt.close(fig1)
     
     # 2. Original YOLO Detections
@@ -169,10 +170,10 @@ def visualize_pipeline_results(pipeline_output, save_path):
             label = f"Pothole (confidence: {confidence:.2f})"
         else:
             label = f"{classType} (confidence: {confidence:.2f})"
-        ax2.text(x1, y1-35, label, color='blue', fontsize=8,
+        ax2.text(x1, y1-20, label, color='blue', fontsize=8,
                  bbox=dict(facecolor='white', alpha=0.7))
     
-    plt.savefig(os.path.join(save_path, f'{image_name}_original_detections.png'), dpi=300, bbox_inches='tight')
+    plt.savefig(os.path.join(save_path, f'{image_name}_1_original_detections.png'), dpi=300, bbox_inches='tight')
     plt.close(fig2)
     
     # 3. Full Segmentation
@@ -180,7 +181,7 @@ def visualize_pipeline_results(pipeline_output, save_path):
     ax3.imshow(colorized_preds)
     ax3.set_title('Full Segmentation')
     ax3.axis('off')
-    plt.savefig(os.path.join(save_path, f'{image_name}_full_segmentation.png'), dpi=300, bbox_inches='tight')
+    plt.savefig(os.path.join(save_path, f'{image_name}_2_full_segmentation.png'), dpi=300, bbox_inches='tight')
     plt.close(fig3)
     
     # 4. Road segmentation
@@ -188,7 +189,7 @@ def visualize_pipeline_results(pipeline_output, save_path):
     ax4.imshow(road_vis)
     ax4.set_title('Road Segmentation')
     ax4.axis('off')
-    plt.savefig(os.path.join(save_path, f'{image_name}_road_segmentation.png'), dpi=300, bbox_inches='tight')
+    plt.savefig(os.path.join(save_path, f'{image_name}_3_road_segmentation.png'), dpi=300, bbox_inches='tight')
     plt.close(fig4)
     
     # 5. Filtered potholes on road
@@ -211,19 +212,87 @@ def visualize_pipeline_results(pipeline_output, save_path):
         rect = plt.Rectangle((x1, y1), x2-x1, y2-y1, fill=False, 
                             edgecolor=color, linewidth=4)
         ax5.add_patch(rect)
-        ax5.text(x1, y1-35, label, color=color, fontsize=10,
+        ax5.text(x1, y1-20, label, color=color, fontsize=10,
                  bbox=dict(facecolor='white', alpha=0.7))
     
-    plt.savefig(os.path.join(save_path, f'{image_name}_filtered_detections.png'), dpi=300, bbox_inches='tight')
+    plt.savefig(os.path.join(save_path, f'{image_name}_4_filtered_detections.png'), dpi=300, bbox_inches='tight')
     plt.close(fig5)
+    
+    visualize_depth_results(pipeline_output['depth_estimations'], save_path, image_name)
 
-def create_results_file(filtered_detections, save_path, image_path):
+def visualize_depth_results(depth_results, save_path, image_name):
+    cropped_potholes = depth_results.get('cropped_potholes', [])
+    depth_maps = depth_results.get('depth_maps', [])
+    relative_depths = depth_results.get('estimated_depths', [])
+    
+    if not cropped_potholes or len(cropped_potholes) == 0:
+        return
+    
+    # Calculate grid size
+    n_potholes = len(cropped_potholes)
+    grid_size = math.ceil(math.sqrt(n_potholes * 2))
+    n_cols = min(grid_size, 4)
+    n_rows = math.ceil(n_potholes * 2 / n_cols)
+    
+    # Create figure for all pothole crops and depth maps
+    fig, axes = plt.subplots(n_rows, n_cols, figsize=(n_cols * 4, n_rows * 3))
+    fig.suptitle('Pothole Crops and Depth Maps', fontsize=16)
+    
+    # Flatten axes array if it's multi-dimensional
+    if n_rows > 1 or n_cols > 1:
+        axes = axes.flatten()
+    else:
+        axes = [axes]
+    
+    # Plot each pothole and its depth map
+    for i in range(n_potholes):
+        ax_idx = i * 2
+        if ax_idx < len(axes):
+            if i < len(cropped_potholes):
+                axes[ax_idx].imshow(cv2.cvtColor(cropped_potholes[i], cv2.COLOR_BGR2RGB))
+                
+                if i < len(relative_depths):
+                    relative_depth = relative_depths[i]['relative_depth']
+                    axes[ax_idx].set_title(f"Pothole {i+1}\nDepth: {relative_depth:.2f}")
+                else:
+                    axes[ax_idx].set_title(f"Pothole {i+1}")
+                
+                axes[ax_idx].axis('off')
+        
+        # Depth map
+        ax_idx = i * 2 + 1
+        if ax_idx < len(axes) and i < len(depth_maps):
+            # Use viridis colormap for depth visualization
+            depth_map = depth_maps[i]
+            im = axes[ax_idx].imshow(depth_map, cmap='viridis')
+            axes[ax_idx].set_title(f"Depth Map {i+1}")
+            axes[ax_idx].axis('off')
+            
+            # Add colorbar
+            plt.colorbar(im, ax=axes[ax_idx], fraction=0.046, pad=0.04)
+    
+    # Turn off any unused subplots
+    for j in range(n_potholes * 2, len(axes)):
+        axes[j].axis('off')
+    
+    plt.tight_layout()
+    plt.subplots_adjust(top=0.95)  # Adjust for the suptitle
+    
+    # Save the figure
+    depth_save_path = os.path.join(save_path, f'{image_name}_5_depth_visualization.png')
+    plt.savefig(depth_save_path, dpi=300, bbox_inches='tight')
+    plt.close()
+
+def create_results_file(filtered_detections, pothole_areas, save_path, image_path):
     """
     Save the results of the pipeline as individual image files.
     
     Args:
-        pipeline_output: Output dictionary from the pipeline
-        output_dir: Directory to save the results
+        filtered_detections: List of filtered pothole detections
+        pothole_areas: List of estimated pothole areas
+        save_path: Directory to save the results
+        image_path: Path to the original image
+        depth_results: Dictionary containing depth estimation results
     """
     basename = os.path.splitext(os.path.basename(image_path))[0]
 
@@ -242,3 +311,8 @@ def create_results_file(filtered_detections, save_path, image_path):
             f.write(f"    Bounding box: {[round(coord, 2) for coord in bbox]}\n")
             f.write(f"    Detection Confidence: {confidence:.2f}\n")
             f.write(f"    % Pixels in box which are road: {percentage:.2f}\n")
+            if (is_on_road):
+                f.write(f"    Estimated Area: {round(pothole_areas[i], 4)}\n")
+            else:
+                f.write(f"    Estimated Area: NA\n")
+

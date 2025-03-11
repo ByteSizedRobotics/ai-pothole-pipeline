@@ -31,8 +31,9 @@ class AreaEstimationStage:
                 y_distance_middle_pothole = (y1+y2)/2
                 scaling_factor = a/(b + c*y_distance_middle_pothole + d*(y_distance_middle_pothole**2))
                 area = scaling_factor * bounding_box_area
-
                 pothole_areas.append(area)
-            print(f"Area of pothole: {area}")
+            else:
+                pothole_areas.append(-1) # -1 means pothole is not on the road
+            # print(f"Area of pothole: {area}")
 
         return pothole_areas

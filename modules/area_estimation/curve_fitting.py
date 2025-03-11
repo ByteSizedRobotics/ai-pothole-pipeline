@@ -98,8 +98,8 @@ plt.yscale('log')
 
 # Add labels and title
 plt.xlabel('Distance from camera y-axis (pixels)', fontsize=12)
-plt.ylabel('Scaling Factor (m²/pixel)', fontsize=12)
-plt.title('Curve Fitting for Scaling Factor Data', fontsize=14)
+plt.ylabel('Scaling Factor (m²/pixel²)', fontsize=12)
+plt.title('Curve Fitting for Scaling Factor Value Based on y-Distance from Camera', fontsize=14)
 plt.grid(True, which="both", ls="-", alpha=0.2)
 plt.legend(fontsize=10)
 

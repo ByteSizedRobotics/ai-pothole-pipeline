@@ -46,14 +46,14 @@ class RoadSegmentation:
         utils.set_bn_momentum(self.model.backbone, momentum=0.01)
         
         # load checkpoint => using CITYSCAPES WEIGHTS for road segmentation
-        if os.path.isfile(self.config.DEEPLAB_CHECKPOINT):
+        if os.path.isfile(self.config.DEEPLAB_CHECKPOINT_FILE):
             checkpoint = torch.load(
-                self.config.DEEPLAB_CHECKPOINT, 
+                self.config.DEEPLAB_CHECKPOINT_FILE, 
                 map_location=torch.device('cpu'),
                 weights_only=False
             )
             self.model.load_state_dict(checkpoint["model_state"])
-            print(f"Loaded segmentation model from {self.config.DEEPLAB_CHECKPOINT}")
+            print(f"Loaded segmentation model from {self.config.DEEPLAB_CHECKPOINT_FILE}")
             del checkpoint
         else:
             print("[!] Warning: No checkpoint found for segmentation model")

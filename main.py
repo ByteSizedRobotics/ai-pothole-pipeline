@@ -4,8 +4,8 @@ from time import time
 from PIL import Image
 from config import Config # config file
 # import models, pipeline stages, visualization functions and utils required by DeepLabV3+
-from modules import RoadSegmentation, PotholeDetection
-from pipeline import PotholeDetectionStage, RoadSegmentationStage, PotholeFilteringStage, AreaEstimationStage
+from modules import RoadSegmentation, PotholeDetection, DepthEstimation
+from pipeline import PotholeDetectionStage, RoadSegmentationStage, PotholeFilteringStage, AreaEstimationStage, DepthEstimationStage
 from utils_lib.visualization import visualize_pipeline_results, create_results_file
 from utils_lib.io_utils import get_image_files
 
@@ -30,6 +30,7 @@ def main():
     print("Initializing models...")
     road_segmenter = RoadSegmentation(Config)
     pothole_detector = PotholeDetection(Config)
+    depth_estimator = DepthEstimation(Config)
     
     # PIPELINE STAGES
     print("Setting up pipeline stages...")
@@ -37,6 +38,7 @@ def main():
     segmentation_stage = RoadSegmentationStage(road_segmenter)
     filtering_stage = PotholeFilteringStage(Config)
     area_estimation_stage = AreaEstimationStage(Config)
+    depth_estimation_stage = DepthEstimationStage(depth_estimator)
     
     image_files = get_image_files(Config.INPUT_PATH)
     if not image_files:
@@ -62,6 +64,10 @@ def main():
 
             # Stage 4: Area Estimation
             pothole_areas = area_estimation_stage.process(img_path, filtered_detections)
+
+            # Stage 5: Depth Estimation
+            depth_estimations = depth_estimation_stage.process(img_path, filtered_detections, Config.DEPTH_ANYTHING_PERCENTILE_FILTER['percentile_filter'],
+                                Config.DEPTH_ANYTHING_PERCENTILE_FILTER['percentile_low_value'], Config.DEPTH_ANYTHING_PERCENTILE_FILTER['percentile_high_value'])
             
             process_time = time() - start_time
             print(f"Processing completed in {process_time:.2f} seconds")
@@ -77,12 +83,14 @@ def main():
                 'full_segmentation': road_segmentation['full_segmentation'],
                 'road_mask': road_segmentation['road_mask'],
                 'filtered_detections': filtered_detections,
-                'detections' : pothole_detections
+                'detections' : pothole_detections,
+                'pothole_areas': pothole_areas,
+                'depth_estimations': depth_estimations
             }
 
             # save pipeline results and create results .txt file
             visualize_pipeline_results(pipeline_output, Config.OUTPUT_PATH)
-            create_results_file(filtered_detections, Config.OUTPUT_PATH, img_path)
+            create_results_file(filtered_detections, pothole_areas, Config.OUTPUT_PATH, img_path)
             print(f"Results saved to {Config.OUTPUT_PATH}")
             
         except Exception as e:

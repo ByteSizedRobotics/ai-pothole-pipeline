@@ -20,22 +20,39 @@
 import os
 
 class Config:
-    # Paths
+    # Paths to input and output images
     INPUT_PATH = "data/images"
     OUTPUT_PATH = "data/results"
-    DEEPLAB_CHECKPOINT = "modules/ai_models/DeepLabV3Plus/checkpoints/best_deeplabv3plus_resnet101_cityscapes_os16.pth"
+
+    # Pothole detection configuration
     POTHOLE_MODEL_PATH = "modules/ai_models/pothole-detection/train-runs/2025-03-01_combined1.1/run/weights/best.pt"  # TODO:NATHAN update this
     
     # DeepLabV3+ configuration
+    DEEPLAB_CHECKPOINT_FILE = "modules/ai_models/DeepLabV3Plus/checkpoints/best_deeplabv3plus_resnet101_cityscapes_os16.pth"
     DEEPLAB_MODEL = "deeplabv3plus_resnet101"
     DATASET = "cityscapes"
     OUTPUT_STRIDE = 16
     NUM_CLASSES = 19  # Cityscapes
+
+    # DepthAnything configuration
+    DEPTH_ANYTHING_ENCODER = 'vitl' # or 'vits', 'vitb'
+    DEPTH_ANYTHING_CHECKPOINT_DIR = "modules/ai_models/DepthAnythingV2/checkpoints"
+    DEPTH_ANYTHING_MODEL_CONFIGS = {
+        'vits': {'encoder': 'vits', 'features': 64, 'out_channels': [48, 96, 192, 384]},
+        'vitb': {'encoder': 'vitb', 'features': 128, 'out_channels': [96, 192, 384, 768]},
+        'vitl': {'encoder': 'vitl', 'features': 256, 'out_channels': [256, 512, 1024, 1024]},
+        'vitg': {'encoder': 'vitg', 'features': 384, 'out_channels': [1536, 1536, 1536, 1536]}
+    }
+    DEPTH_ANYTHING_PERCENTILE_FILTER = {
+        'percentile_filter' : True,
+        'percentile_low_value' : 5,
+        'percentile_high_value' : 95
+    }
     
     # Pothole filtering configuration
     MIN_PIXELS_ROAD_THRESHOLD = 0.60  # Minimum percentage of pixels in bounding box area to be considered as a pothole on the road
     
-    # Device configuration
+    # Device configuration (not rlly used)
     GPU_ID = "0"
     
     # Create directories if they don't exist
