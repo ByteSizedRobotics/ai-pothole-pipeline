@@ -223,7 +223,8 @@ def visualize_pipeline_results(pipeline_output, save_path):
 def visualize_depth_results(depth_results, save_path, image_name):
     cropped_potholes = depth_results.get('cropped_potholes', [])
     depth_maps = depth_results.get('depth_maps', [])
-    relative_depths = depth_results.get('estimated_depths', [])
+    relative_depths = depth_results.get('relative_depths', [])
+    normalized_depths = depth_results.get('normalized_depths', [])
     
     # Calculate grid size
     n_potholes = len(cropped_potholes)
@@ -253,7 +254,8 @@ def visualize_depth_results(depth_results, save_path, image_name):
                 
                 if i < len(relative_depths):
                     relative_depth = relative_depths[i]
-                    axes[ax_idx].set_title(f"Pothole {i+1}\nDepth: {relative_depth:.2f}")
+                    normalized_depth = normalized_depths[i]
+                    axes[ax_idx].set_title(f"Pothole {i+1}\nDepth: {relative_depth:.2f} (Normalized: {normalized_depth:.2f})")
                 else:
                     axes[ax_idx].set_title(f"Pothole {i+1}")
                 
