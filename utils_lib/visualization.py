@@ -1,5 +1,5 @@
-# utils/visualization.py
 import math
+import cv2
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
@@ -225,9 +225,6 @@ def visualize_depth_results(depth_results, save_path, image_name):
     depth_maps = depth_results.get('depth_maps', [])
     relative_depths = depth_results.get('estimated_depths', [])
     
-    if not cropped_potholes or len(cropped_potholes) == 0:
-        return
-    
     # Calculate grid size
     n_potholes = len(cropped_potholes)
     grid_size = math.ceil(math.sqrt(n_potholes * 2))
@@ -249,10 +246,13 @@ def visualize_depth_results(depth_results, save_path, image_name):
         ax_idx = i * 2
         if ax_idx < len(axes):
             if i < len(cropped_potholes):
+                if cropped_potholes[i] is None: # check if images is None == pothole not on road
+                    continue
+
                 axes[ax_idx].imshow(cv2.cvtColor(cropped_potholes[i], cv2.COLOR_BGR2RGB))
                 
                 if i < len(relative_depths):
-                    relative_depth = relative_depths[i]['relative_depth']
+                    relative_depth = relative_depths[i]
                     axes[ax_idx].set_title(f"Pothole {i+1}\nDepth: {relative_depth:.2f}")
                 else:
                     axes[ax_idx].set_title(f"Pothole {i+1}")

@@ -53,6 +53,6 @@ class DepthEstimationStage:
 
         return {
             'cropped_potholes': cropped_potholes,
-            'depth_maps': depth_map,
+            'depth_maps': depth_maps,
             'estimated_depths': estimated_depths
         }

@@ -7,7 +7,7 @@ __pycache__/
 *.so
 
 # Ignore datasets folder
-fulldatasets/ 
+fulldatasets/
 
 # Distribution / packaging
 .Python
