@@ -64,7 +64,7 @@ def visualize_pipeline_results(pipeline_output, save_path):
     ax[0, 1].axis('off')
     
     # Draw original YOLO pothole bounding boxes
-    for *bbox, confidence, classType in detections.xyxy[0].tolist():
+    for i, (*bbox, confidence, classType) in enumerate(detections.xyxy[0].tolist()):
         x1, y1, x2, y2 = map(int, bbox)
         
         # Draw bounding box in blue for original detections
@@ -72,7 +72,7 @@ def visualize_pipeline_results(pipeline_output, save_path):
                             edgecolor='blue', linewidth=2)
         ax[0, 1].add_patch(rect)
         if classType == 0:
-            label = f"Pothole (confidence: {confidence:.2f})"
+            label = f"Pothole {i+1} (confidence: {confidence:.2f})"
         else:
             label = f"{classType} (confidence: {confidence:.2f})"
         ax[0, 1].text(x1, y1-20, label, color='blue', fontsize=8,
@@ -118,17 +118,17 @@ def visualize_pipeline_results(pipeline_output, save_path):
     ax[1, 2].axis('off')
     
     # Draw filtered pothole bounding boxes
-    for confidence, bbox, is_on_road, percentage in filtered_detections:
+    for i, (confidence, bbox, is_on_road, percentage) in enumerate(filtered_detections):
         x1, y1, x2, y2 = bbox
         
         if is_on_road:
             # Green for potholes on road
             color = 'green'
-            label = f"On Road (%: {percentage:.2f})"
+            label = f"Pothole {i+1} On Road (pixels on road: {percentage:.2f})"
         else:
             # Red for potholes not on road
             color = 'red'
-            label = f"Not on Road (%: {percentage:.2f})"
+            label = f"Pothole {i+1} Not on Road (pixels on road: {percentage:.2f})"
         
         rect = plt.Rectangle((x1, y1), x2-x1, y2-y1, fill=False, 
                             edgecolor=color, linewidth=4)
@@ -161,13 +161,13 @@ def visualize_pipeline_results(pipeline_output, save_path):
     ax2.axis('off')
     
     # Draw original YOLO pothole bounding boxes
-    for *bbox, confidence, classType in detections.xyxy[0].tolist():
+    for i, (*bbox, confidence, classType) in enumerate(detections.xyxy[0].tolist()):
         x1, y1, x2, y2 = map(int, bbox)
         rect = plt.Rectangle((x1, y1), x2-x1, y2-y1, fill=False, 
                             edgecolor='blue', linewidth=2)
         ax2.add_patch(rect)
         if classType == 0:
-            label = f"Pothole (confidence: {confidence:.2f})"
+            label = f"Pothole {i+1} (confidence: {confidence:.2f})"
         else:
             label = f"{classType} (confidence: {confidence:.2f})"
         ax2.text(x1, y1-20, label, color='blue', fontsize=8,
@@ -199,15 +199,17 @@ def visualize_pipeline_results(pipeline_output, save_path):
     ax5.axis('off')
     
     # Draw filtered pothole bounding boxes
-    for confidence, bbox, is_on_road, percentage in filtered_detections:
+    for i, (confidence, bbox, is_on_road, percentage) in enumerate(filtered_detections):
         x1, y1, x2, y2 = bbox
         
         if is_on_road:
+            # Green for potholes on road
             color = 'green'
-            label = f"On Road (%: {percentage:.2f})"
+            label = f"Pothole {i+1} On Road (pixels on road: {percentage:.2f})"
         else:
+            # Red for potholes not on road
             color = 'red'
-            label = f"Not on Road (%: {percentage:.2f})"
+            label = f"Pothole {i+1} Not on Road (pixels on road: {percentage:.2f})"
         
         rect = plt.Rectangle((x1, y1), x2-x1, y2-y1, fill=False, 
                             edgecolor=color, linewidth=4)

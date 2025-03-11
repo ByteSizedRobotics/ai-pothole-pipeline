@@ -13,7 +13,7 @@ class DepthEstimationStage:
     def __init__(self, depth_estimator):
         self.depth_estimator = depth_estimator
     
-    def process(self, img_path, filtered_detections, percentile_filter, percentile_low_value, percentile_high_value):
+    def process(self, img_path, filtered_detections, pothole_areas, percentile_filter, percentile_low_value, percentile_high_value):
         print(f"[Stage 5] Estimating relative depth of pothole {os.path.basename(img_path)}")
 
         if img_path.endswith(".jpg") or img_path.endswith(".png"):
@@ -24,10 +24,9 @@ class DepthEstimationStage:
         relative_depths = [] # stores the relative depths of the potholes (max depth - min depth)
         normalized_depths = [] # stores the normalized depths of the potholes
 
-        for _, bbox, is_on_road, _ in filtered_detections:
+        for i, (_, bbox, is_on_road, _) in enumerate(filtered_detections):
             if is_on_road:
                 x1, y1, x2, y2 = bbox
-                area = (x2 - x1) * (y2 - y1)
                 
                 x1, y1 = max(0, int(x1)), max(0, int(y1)) # make sure x1 and y1 are not negative
                 x2, y2 = min(image.shape[1], int(x2)), min(image.shape[0], int(y2)) # make sure x2 and y2 are within image bounds
@@ -51,7 +50,7 @@ class DepthEstimationStage:
                 # Normalize the depth by dividing the relative depth by the square root of the area
                 # Or else bigger potholes will have higher depth values than smaller potholes 
                 # regardless of the actual depth of the pothole.
-                normalized_depth = relative_depth / np.sqrt(area) * 1000
+                normalized_depth = relative_depth / np.sqrt(pothole_areas[i]) * 1000
                 normalized_depths.append(normalized_depth)
 
             else:

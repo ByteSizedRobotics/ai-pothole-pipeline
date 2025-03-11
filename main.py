@@ -66,7 +66,7 @@ def main():
             pothole_areas = area_estimation_stage.process(img_path, filtered_detections)
 
             # Stage 5: Depth Estimation
-            depth_estimations = depth_estimation_stage.process(img_path, filtered_detections, Config.DEPTH_ANYTHING_PERCENTILE_FILTER['percentile_filter'],
+            depth_estimations = depth_estimation_stage.process(img_path, filtered_detections, pothole_areas, Config.DEPTH_ANYTHING_PERCENTILE_FILTER['percentile_filter'],
                                 Config.DEPTH_ANYTHING_PERCENTILE_FILTER['percentile_low_value'], Config.DEPTH_ANYTHING_PERCENTILE_FILTER['percentile_high_value'])
             
             process_time = time() - start_time
