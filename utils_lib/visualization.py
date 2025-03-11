@@ -69,10 +69,10 @@ def visualize_pipeline_results(pipeline_output, save_path):
         
         # Draw bounding box in blue for original detections
         rect = plt.Rectangle((x1, y1), x2-x1, y2-y1, fill=False, 
-                            edgecolor='blue', linewidth=2)
+                            edgecolor='blue', linewidth=1.5)
         ax[0, 1].add_patch(rect)
         if classType == 0:
-            label = f"Pothole {i+1} (confidence: {confidence:.2f})"
+            label = f"#{i+1} (confidence: {confidence:.2f})"
         else:
             label = f"{classType} (confidence: {confidence:.2f})"
         ax[0, 1].text(x1, y1-20, label, color='blue', fontsize=8,
@@ -124,16 +124,16 @@ def visualize_pipeline_results(pipeline_output, save_path):
         if is_on_road:
             # Green for potholes on road
             color = 'green'
-            label = f"Pothole {i+1} On Road (pixels on road: {percentage:.2f})"
+            label = f"#{i+1} On Road ({percentage:.2f})"
         else:
             # Red for potholes not on road
             color = 'red'
-            label = f"Pothole {i+1} Not on Road (pixels on road: {percentage:.2f})"
+            label = f"#{i+1} Not on Road ({percentage:.2f})"
         
         rect = plt.Rectangle((x1, y1), x2-x1, y2-y1, fill=False, 
-                            edgecolor=color, linewidth=4)
+                            edgecolor=color, linewidth=1.5)
         ax[1, 2].add_patch(rect)
-        ax[1, 2].text(x1, y1-20, label, color=color, fontsize=10,
+        ax[1, 2].text(x1, y1-20, label, color=color, fontsize=8,
                   bbox=dict(facecolor='white', alpha=0.7))
     
     plt.tight_layout()
@@ -164,10 +164,10 @@ def visualize_pipeline_results(pipeline_output, save_path):
     for i, (*bbox, confidence, classType) in enumerate(detections.xyxy[0].tolist()):
         x1, y1, x2, y2 = map(int, bbox)
         rect = plt.Rectangle((x1, y1), x2-x1, y2-y1, fill=False, 
-                            edgecolor='blue', linewidth=2)
+                            edgecolor='blue', linewidth=1.5)
         ax2.add_patch(rect)
         if classType == 0:
-            label = f"Pothole {i+1} (confidence: {confidence:.2f})"
+            label = f"#{i+1} (confidence: {confidence:.2f})"
         else:
             label = f"{classType} (confidence: {confidence:.2f})"
         ax2.text(x1, y1-20, label, color='blue', fontsize=8,
@@ -205,16 +205,16 @@ def visualize_pipeline_results(pipeline_output, save_path):
         if is_on_road:
             # Green for potholes on road
             color = 'green'
-            label = f"Pothole {i+1} On Road (pixels on road: {percentage:.2f})"
+            label = f"#{i+1} On Road ({percentage:.2f})"
         else:
             # Red for potholes not on road
             color = 'red'
-            label = f"Pothole {i+1} Not on Road (pixels on road: {percentage:.2f})"
+            label = f"#{i+1} Not on Road ({percentage:.2f})"
         
         rect = plt.Rectangle((x1, y1), x2-x1, y2-y1, fill=False, 
-                            edgecolor=color, linewidth=4)
+                            edgecolor=color, linewidth=1.5)
         ax5.add_patch(rect)
-        ax5.text(x1, y1-20, label, color=color, fontsize=10,
+        ax5.text(x1, y1-20, label, color=color, fontsize=8,
                  bbox=dict(facecolor='white', alpha=0.7))
     
     plt.savefig(os.path.join(save_path, f'{image_name}_4_filtered_detections.png'), dpi=300, bbox_inches='tight')
@@ -227,57 +227,51 @@ def visualize_depth_results(depth_results, save_path, image_name):
     depth_maps = depth_results.get('depth_maps', [])
     relative_depths = depth_results.get('relative_depths', [])
     normalized_depths = depth_results.get('normalized_depths', [])
-    
-    # Calculate grid size
-    n_potholes = len(cropped_potholes)
-    grid_size = math.ceil(math.sqrt(n_potholes * 2))
-    n_cols = min(grid_size, 4)
-    n_rows = math.ceil(n_potholes * 2 / n_cols)
-    
-    # Create figure for all pothole crops and depth maps
-    fig, axes = plt.subplots(n_rows, n_cols, figsize=(n_cols * 4, n_rows * 3))
-    fig.suptitle('Pothole Crops and Depth Maps', fontsize=16)
-    
-    # Flatten axes array if it's multi-dimensional
-    if n_rows > 1 or n_cols > 1:
-        axes = axes.flatten()
-    else:
-        axes = [axes]
-    
-    # Plot each pothole and its depth map
-    for i in range(n_potholes):
-        ax_idx = i * 2
-        if ax_idx < len(axes):
-            if i < len(cropped_potholes):
-                if cropped_potholes[i] is None: # check if images is None == pothole not on road
-                    continue
 
-                axes[ax_idx].imshow(cv2.cvtColor(cropped_potholes[i], cv2.COLOR_BGR2RGB))
-                
-                if i < len(relative_depths):
-                    relative_depth = relative_depths[i]
-                    normalized_depth = normalized_depths[i]
-                    axes[ax_idx].set_title(f"Pothole {i+1}\nDepth: {relative_depth:.2f} (Normalized: {normalized_depth:.2f})")
-                else:
-                    axes[ax_idx].set_title(f"Pothole {i+1}")
-                
-                axes[ax_idx].axis('off')
-        
-        # Depth map
-        ax_idx = i * 2 + 1
-        if ax_idx < len(axes) and i < len(depth_maps):
-            # Use viridis colormap for depth visualization
-            depth_map = depth_maps[i]
-            im = axes[ax_idx].imshow(depth_map, cmap='viridis')
-            axes[ax_idx].set_title(f"Depth Map {i+1}")
-            axes[ax_idx].axis('off')
-            
-            # Add colorbar
-            plt.colorbar(im, ax=axes[ax_idx], fraction=0.046, pad=0.04)
+    # Filter out None values (potholes not on road)
+    valid_indices = [i for i, crop in enumerate(cropped_potholes) if crop is not None]
+    potholes_on_road = len(valid_indices)
     
-    # Turn off any unused subplots
-    for j in range(n_potholes * 2, len(axes)):
-        axes[j].axis('off')
+    if potholes_on_road == 0:
+        # Handle case where no potholes are on the road
+        fig, ax = plt.subplots(figsize=(6, 3))
+        ax.text(0.5, 0.5, "No potholes detected on road", fontsize=12, ha='center')
+        ax.axis('off')
+    else:
+        # Create figure with 2 columns per pothole (image and depth map)
+        fig, axes = plt.subplots(potholes_on_road, 2, figsize=(8, 3 * potholes_on_road))
+        
+        # Handle case where only one pothole is detected (axes won't be 2D)
+        if potholes_on_road == 1:
+            axes = np.array([axes])  # Make it 2D
+            
+        fig.suptitle('Pothole Crops and Depth Maps', fontsize=12)
+        
+        # Plot each pothole and its depth map
+        for idx, i in enumerate(valid_indices):
+            # Pothole crop
+            axes[idx, 0].imshow(cv2.cvtColor(cropped_potholes[i], cv2.COLOR_BGR2RGB))
+            
+            if i < len(relative_depths):
+                relative_depth = relative_depths[i]
+                normalized_depth = normalized_depths[i]
+                axes[idx, 0].set_title(f"Pothole #{i+1}\nDepth: {relative_depth:.2f} (Normalized: {normalized_depth:.2f})")
+            else:
+                axes[idx, 0].set_title(f"Pothole #{i+1}")
+            
+            axes[idx, 0].axis('off')
+            
+            # Depth map
+            if i < len(depth_maps) and depth_maps[i] is not None:
+                im = axes[idx, 1].imshow(depth_maps[i], cmap='viridis')
+                axes[idx, 1].set_title(f"Depth Map #{i+1}")
+                axes[idx, 1].axis('off')
+                
+                # Add colorbar
+                plt.colorbar(im, ax=axes[idx, 1], fraction=0.046, pad=0.04)
+            else:
+                axes[idx, 1].text(0.5, 0.5, "No depth map available", ha='center')
+                axes[idx, 1].axis('off')
     
     plt.tight_layout()
     plt.subplots_adjust(top=0.95)  # Adjust for the suptitle
@@ -311,7 +305,7 @@ def create_results_file(filtered_detections, pothole_areas, save_path, image_pat
         f.write("Detailed results:\n")
         for i, (confidence, bbox, is_on_road, percentage) in enumerate(filtered_detections):
             status = "ON road" if is_on_road else "NOT on road"
-            f.write(f"Pothole {i+1}: {status}\n")
+            f.write(f"Pothole #{i+1}: {status}\n")
             f.write(f"    Bounding box: {[round(coord, 2) for coord in bbox]}\n")
             f.write(f"    Detection Confidence: {confidence:.2f}\n")
             f.write(f"    % Pixels in box which are road: {percentage:.2f}\n")

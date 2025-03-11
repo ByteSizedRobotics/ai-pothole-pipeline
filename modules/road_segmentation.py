@@ -64,25 +64,15 @@ class RoadSegmentation:
     
     def segment_image(self, image):
         """
-        Segment an image to get a road mask.
-        
-        Args:
-            image: PIL Image
-            
-        Returns:
-            road_mask: Binary numpy array with 1 for road pixels and 0 elsewhere
-            full_segmentation: Complete segmentation output with all classes
+        Segment an image with Cityscapes classes
         """
         with torch.no_grad():
-            # Transform image to tensor
-            img_tensor = self.transform(image).unsqueeze(0)  # Add batch dimension
-            img_tensor = img_tensor.to(self.device)
+            img_tensor = self.transform(image).unsqueeze(0)
             
-            # Forward pass
             outputs = self.model(img_tensor)
-            predictions = outputs.max(1)[1].cpu().numpy()[0]  # (H, W)
+            predictions = outputs.max(1)[1].cpu().numpy()[0]
             
-            # Create road mask (class index 1 is road in Cityscapes)
+            # Create road mask (class index 1 is road in Cityscapes but 0 is the one for road??)
             road_mask = (predictions == 0).astype(np.uint8)
             
             return road_mask, predictions

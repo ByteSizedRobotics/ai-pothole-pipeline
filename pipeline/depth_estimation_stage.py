@@ -50,7 +50,7 @@ class DepthEstimationStage:
                 # Normalize the depth by dividing the relative depth by the square root of the area
                 # Or else bigger potholes will have higher depth values than smaller potholes 
                 # regardless of the actual depth of the pothole.
-                normalized_depth = relative_depth / np.sqrt(pothole_areas[i]) * 1000
+                normalized_depth = relative_depth / np.sqrt(pothole_areas[i]) #* 1000
                 normalized_depths.append(normalized_depth)
 
                 print('Relative Depth:', relative_depth)
