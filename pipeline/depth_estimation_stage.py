@@ -41,9 +41,9 @@ class DepthEstimationStage:
                     max_depth = np.percentile(depth_map, percentile_high_value)
 
                 estimated_depth = max_depth - min_depth
-                print('Estimated Depth:', estimated_depth)
-                print('Max Depth:', max_depth)
-                print('Min Depth:', min_depth)
+                # print('Estimated Depth:', estimated_depth)
+                # print('Max Depth:', max_depth)
+                # print('Min Depth:', min_depth)
 
                 estimated_depths.append(estimated_depth)
             else:

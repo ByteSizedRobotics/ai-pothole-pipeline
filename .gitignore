@@ -8,6 +8,7 @@ __pycache__/
 
 # Ignore datasets folder
 fulldatasets/
+slimdatasets/
 
 # Distribution / packaging
 .Python
