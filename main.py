@@ -58,7 +58,7 @@ def main():
         start_time = time()
         try:
             image = Image.open(img_path).convert('RGB')
-            image_name = os.path.basename(img_path)
+            image_name = os.path.splitext(os.path.basename(img_path))[0]
             save_path = Config.OUTPUT_PATH
             visualize_original_image(image, save_path, image_name)
 
@@ -77,13 +77,14 @@ def main():
             filtered_detections = filtering_stage.process(img_path, pothole_detections, road_segmentation)
             visualize_filtered_detections(image, road_segmentation['road_mask'], filtered_detections, save_path, image_name)
 
-            # Stage 4: Depth Estimation
+            # Stage 4: Area Estimation
+            pothole_areas = area_estimation_stage.process(img_path, filtered_detections)
+
+            # Stage 5: Depth Estimation
             depth_estimations = depth_estimation_stage.process(img_path, filtered_detections, pothole_areas, Config.DEPTH_ANYTHING_PERCENTILE_FILTER['percentile_filter'],
                                 Config.DEPTH_ANYTHING_PERCENTILE_FILTER['percentile_low_value'], Config.DEPTH_ANYTHING_PERCENTILE_FILTER['percentile_high_value'])
             visualize_depth_results(depth_estimations, save_path, image_name)
 
-            # Stage 5: Area Estimation
-            pothole_areas = area_estimation_stage.process(img_path, filtered_detections)
             
             # Stage 6: Pothole Categorization
             pothole_categorizations = pothole_categorization_stage.process(img_path, filtered_detections, pothole_areas, depth_estimations['normalized_depths'])
