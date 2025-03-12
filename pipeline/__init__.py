@@ -3,3 +3,4 @@ from .road_segmentation_stage import RoadSegmentationStage
 from .pothole_filtering_stage import PotholeFilteringStage
 from .area_estimation_stage import AreaEstimationStage
 from .depth_estimation_stage import DepthEstimationStage
+from .pothole_categorization_stage import PotholeCategorizationStage

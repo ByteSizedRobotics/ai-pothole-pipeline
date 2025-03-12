@@ -23,9 +23,10 @@ class Config:
     # Paths to input and output images
     INPUT_PATH = "data/images"
     OUTPUT_PATH = "data/results"
+    IMAGE_RESOLUTION = (3280, 2464)  # TODO: NATHAN update this when needed for different image resolutions
 
     # Pothole detection configuration
-    POTHOLE_MODEL_PATH = "modules/ai_models/pothole-detection/train-runs/2025-03-01_combined1.1/run/weights/best.pt"  # TODO:NATHAN update this
+    POTHOLE_MODEL_PATH = "modules/ai_models/pothole-detection/train-runs/2025-03-01_combined1.1/run/weights/best.pt"  # TODO: NATHAN keep this up to date based on best weights
     
     # DeepLabV3+ configuration
     DEEPLAB_CHECKPOINT_FILE = "modules/ai_models/DeepLabV3Plus/checkpoints/best_deeplabv3plus_resnet101_cityscapes_os16.pth"
@@ -41,7 +42,6 @@ class Config:
         'vits': {'encoder': 'vits', 'features': 64, 'out_channels': [48, 96, 192, 384]},
         'vitb': {'encoder': 'vitb', 'features': 128, 'out_channels': [96, 192, 384, 768]},
         'vitl': {'encoder': 'vitl', 'features': 256, 'out_channels': [256, 512, 1024, 1024]},
-        'vitg': {'encoder': 'vitg', 'features': 384, 'out_channels': [1536, 1536, 1536, 1536]}
     }
     DEPTH_ANYTHING_PERCENTILE_FILTER = {
         'percentile_filter' : True,

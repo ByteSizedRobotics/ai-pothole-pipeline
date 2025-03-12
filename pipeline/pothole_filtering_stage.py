@@ -26,13 +26,13 @@ class PotholeFilteringStage:
         count = 0
         for *bbox, confidence, classType in detections.xyxy[0].tolist():
             x1, y1, x2, y2 = map(int, bbox)
+            is_on_road = False
 
             # display the size of the road mask
             # print("Road Mask Size:",road_mask.shape[0],road_mask.shape[1])
-            corners = [(x1, y1), (x2, y1), (x1, y2), (x2, y2)]
+            # corners = [(x1, y1), (x2, y1), (x1, y2), (x2, y2)]
             # print("Pothole corners",count,":",corners)
-            corner_on_road = 0
-            is_on_road = False
+            # corner_on_road = 0
 
             # OG method to check if pothole is on road
             # checks what the segmented class for each of the corners of the bounding box
@@ -74,12 +74,12 @@ class PotholeFilteringStage:
 
             percentage_pixels_on_road = (num_points_on_road / total_num_points)
             percentage_pixels_on_vegetation = (num_points_on_vegetation / total_num_points)
-            print("Percentage of pixels on road:",percentage_pixels_on_road)
-            print("Percentage of pixels on vegetation:",percentage_pixels_on_vegetation)
+            # print("Percentage of pixels on road:",percentage_pixels_on_road)
+            # print("Percentage of pixels on vegetation:",percentage_pixels_on_vegetation)
 
             if percentage_pixels_on_road >= self.min_road_threshold:
                 is_on_road = True
-            elif confidence >= 0.80 and percentage_pixels_on_road >= 0.30:
+            elif confidence >= 0.80 and percentage_pixels_on_road >= 0.30: # TODO: NATHAN update maybe this elif check not needed
                 is_on_road = True
             elif confidence >= 0.75 and percentage_pixels_on_vegetation >= 0.5 and percentage_pixels_on_road >= 0.05:
                 is_on_road = True

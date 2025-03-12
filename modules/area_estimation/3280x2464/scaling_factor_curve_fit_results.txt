@@ -1,0 +1,16 @@
+Model Fitting Results (sorted by goodness of fit):
+               Model        R²      RMSE
+0  Rational Function  0.998561  0.000004
+1  Exponential Decay  0.997249  0.000006
+2          Power Law  0.997243  0.000006
+3  Inverse Quadratic  0.984889  0.000014
+4         Hyperbolic  0.981959  0.000015
+
+Best Model Parameter Values:
+a = -0.00022788150560381466
+b = -249.57544427170112
+c = 0.6036184827412467
+d = -0.00036558500089469364
+
+Function Formula:
+y = -2.278815e-04 / (-249.575444 + 6.036185e-01*x + -3.655850e-04*x²)

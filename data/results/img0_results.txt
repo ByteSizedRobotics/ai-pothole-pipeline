@@ -1,31 +1,46 @@
-Results for data/images\img0.jpg
+Results for data/images/img0.jpg
 Total potholes detected: 5
 Potholes on road: 4
 Potholes not on road: 1
 
 Detailed results:
 Pothole #1: ON road
-    Bounding box: [1677.92, 1480.38, 2204.41, 1646.46]
-    Detection Confidence: 0.87
-    % Pixels in box which are road: 0.63
-    Estimated Area: 0.0999
-Pothole #2: ON road
-    Bounding box: [3033.63, 2426.55, 4022.69, 3024.0]
-    Detection Confidence: 0.68
+    Bounding box: [1355.21, 1206.12, 1801.62, 1340.85]
+    Detection Confidence: 0.88
     % Pixels in box which are road: 0.88
-    Estimated Area: 0.102
+    Estimated Area: 0.1858
+    Estimated Depth: 0.8703
+    Categorization: Low
+    Categorization Score: 0.4093
+Pothole #2: ON road
+    Bounding box: [2463.46, 1972.03, 3274.69, 2464.0]
+    Detection Confidence: 0.74
+    % Pixels in box which are road: 0.93
+    Estimated Area: 0.1282
+    Estimated Depth: 0.9305
+    Categorization: Low
+    Categorization Score: 0.4341
 Pothole #3: ON road
-    Bounding box: [1977.15, 1211.78, 2601.26, 1293.4]
-    Detection Confidence: 0.41
-    % Pixels in box which are road: 0.98
-    Estimated Area: 0.1731
+    Bounding box: [0.0, 1276.41, 3187.6, 2464.0]
+    Detection Confidence: 0.32
+    % Pixels in box which are road: 0.97
+    Estimated Area: 2.16
+    Estimated Depth: 0.3376
+    Categorization: Low
+    Categorization Score: 0.167
 Pothole #4: NOT on road
-    Bounding box: [266.77, 14.72, 4032.0, 855.42]
-    Detection Confidence: 0.34
-    % Pixels in box which are road: 0.03
+    Bounding box: [210.3, 11.29, 3280.0, 693.65]
+    Detection Confidence: 0.29
+    % Pixels in box which are road: 0.02
     Estimated Area: NA
+    Estimated Depth: NA
+    Categorization: NA
+    Categorization Score: -1
 Pothole #5: ON road
-    Bounding box: [21.61, 1570.11, 3534.78, 3024.0]
-    Detection Confidence: 0.31
-    % Pixels in box which are road: 0.94
-    Estimated Area: 1.4696
+    Bounding box: [1596.84, 989.29, 2129.56, 1055.31]
+    Detection Confidence: 0.27
+    % Pixels in box which are road: 0.99
+    Estimated Area: 0.5502
+    Estimated Depth: 0.2308
+    Categorization: Low
+    Categorization Score: 0.1146

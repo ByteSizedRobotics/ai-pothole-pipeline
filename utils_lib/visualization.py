@@ -281,7 +281,7 @@ def visualize_depth_results(depth_results, save_path, image_name):
     plt.savefig(depth_save_path, dpi=300, bbox_inches='tight')
     plt.close()
 
-def create_results_file(filtered_detections, pothole_areas, save_path, image_path):
+def create_results_file(filtered_detections, pothole_areas, depth_estimations, pothole_categorizations, save_path, image_path):
     """
     Save the results of the pipeline as individual image files.
     
@@ -309,8 +309,16 @@ def create_results_file(filtered_detections, pothole_areas, save_path, image_pat
             f.write(f"    Bounding box: {[round(coord, 2) for coord in bbox]}\n")
             f.write(f"    Detection Confidence: {confidence:.2f}\n")
             f.write(f"    % Pixels in box which are road: {percentage:.2f}\n")
-            if (is_on_road):
+            if is_on_road:
                 f.write(f"    Estimated Area: {round(pothole_areas[i], 4)}\n")
             else:
                 f.write(f"    Estimated Area: NA\n")
+            if is_on_road:
+                f.write(f"    Estimated Depth: {round(depth_estimations['normalized_depths'][i], 4)}\n")
+            else:
+                f.write(f"    Estimated Depth: NA\n")
+            f.write(f"    Categorization: {pothole_categorizations['categories'][i]}\n")
+            f.write(f"    Categorization Score: {round(pothole_categorizations['scores'][i], 4)}\n")
+
+
 

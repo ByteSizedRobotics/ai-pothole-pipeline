@@ -3,18 +3,21 @@ import argparse
 from time import time
 from PIL import Image
 from config import Config # config file
+
 # import models, pipeline stages, visualization functions and utils required by DeepLabV3+
 from modules import RoadSegmentation, PotholeDetection, DepthEstimation
-from pipeline import PotholeDetectionStage, RoadSegmentationStage, PotholeFilteringStage, AreaEstimationStage, DepthEstimationStage
+from pipeline import PotholeDetectionStage, RoadSegmentationStage, PotholeFilteringStage, AreaEstimationStage, DepthEstimationStage, PotholeCategorizationStage
 from utils_lib.visualization import visualize_pipeline_results, create_results_file
 from utils_lib.io_utils import get_image_files
 
 def parse_args():
-    parser = argparse.ArgumentParser(description='Pothole Detection Pipeline')
+    parser = argparse.ArgumentParser(description='Pothole Detection & Analysis Pipeline')
     parser.add_argument('--input', type=str, default=None,
                         help='Path to input image or directory') # by default it is set to data/images
     parser.add_argument('--output', type=str, default=None,
                         help='Path to output directory') # by default it is set to data/results
+    parser.add_argument('--resolution', type=str, default=None,
+                        help='Image resolution (ex: 3280x2464, 1280x720)') # by default it is set to the value in config.py (3280x2464)
     return parser.parse_args()
 
 def main():
@@ -24,6 +27,8 @@ def main():
         Config.INPUT_PATH = args.input
     if args.output:
         Config.OUTPUT_PATH = args.output
+    if args.resolution:
+        Config.IMAGE_RESOLUTION = tuple(map(int, args.resolution.split('x')))
     
     Config.create_dirs()
     
@@ -39,6 +44,7 @@ def main():
     filtering_stage = PotholeFilteringStage(Config)
     area_estimation_stage = AreaEstimationStage(Config)
     depth_estimation_stage = DepthEstimationStage(depth_estimator)
+    pothole_categorization_stage = PotholeCategorizationStage(Config)
     
     image_files = get_image_files(Config.INPUT_PATH)
     if not image_files:
@@ -69,6 +75,9 @@ def main():
             depth_estimations = depth_estimation_stage.process(img_path, filtered_detections, pothole_areas, Config.DEPTH_ANYTHING_PERCENTILE_FILTER['percentile_filter'],
                                 Config.DEPTH_ANYTHING_PERCENTILE_FILTER['percentile_low_value'], Config.DEPTH_ANYTHING_PERCENTILE_FILTER['percentile_high_value'])
             
+            # Stage 6: Pothole Categorization
+            pothole_categorizations = pothole_categorization_stage.process(img_path, filtered_detections, pothole_areas, depth_estimations['normalized_depths'])
+
             process_time = time() - start_time
             print(f"Processing completed in {process_time:.2f} seconds")
             
@@ -85,12 +94,13 @@ def main():
                 'filtered_detections': filtered_detections,
                 'detections' : pothole_detections,
                 'pothole_areas': pothole_areas,
-                'depth_estimations': depth_estimations
+                'depth_estimations': depth_estimations,
+                'pothole_categorizations': pothole_categorizations
             }
 
             # save pipeline results and create results .txt file
             visualize_pipeline_results(pipeline_output, Config.OUTPUT_PATH)
-            create_results_file(filtered_detections, pothole_areas, Config.OUTPUT_PATH, img_path)
+            create_results_file(filtered_detections, pothole_areas, depth_estimations, pothole_categorizations, Config.OUTPUT_PATH, img_path)
             print(f"Results saved to {Config.OUTPUT_PATH}")
             
         except Exception as e:
