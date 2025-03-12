@@ -7,7 +7,7 @@ Detailed results:
 Pothole #1: ON road
     Bounding box: [1582.19, 1313.39, 2021.69, 1843.17]
     Detection Confidence: 0.90
-    % Pixels in box which are road: 0.78
+    % Pixels in box which are road: 0.76
     Estimated Area: 0.2556
 Pothole #2: ON road
     Bounding box: [102.5, 865.44, 706.5, 959.54]

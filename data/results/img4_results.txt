@@ -1,4 +1,4 @@
-Results for .\data\images\img4.jpg
+Results for data/images\img4.jpg
 Total potholes detected: 2
 Potholes on road: 2
 Potholes not on road: 0
