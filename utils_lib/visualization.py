@@ -138,7 +138,7 @@ def visualize_filtered_detections(image, road_mask, filtered_detections, save_pa
     return fig, ax, road_overlay
 
 # Function to visualize area results
-def visualize_pothole_areas(image, filtered_detections, pothole_areas, resolution, save_path, image_name):
+def visualize_pothole_areas(image, filtered_detections, pothole_areas, save_path, image_name):
     fig, ax = plt.subplots(figsize=(12, 8))
     
     ax.imshow(image)
@@ -149,16 +149,6 @@ def visualize_pothole_areas(image, filtered_detections, pothole_areas, resolutio
     for i, (confidence, bbox, is_on_road, percentage) in enumerate(filtered_detections):
         x1, y1, x2, y2 = bbox
 
-        if resolution == (3280, 2464):
-            width = 3280
-            height = 2464
-        elif resolution == (1280, 720):
-            width = 1280
-            height = 720
-                    
-        max_area = (width/2) * (height/2)
-        min_area = 528
-
         if is_on_road:
             color = 'blue'
             area_value = pothole_areas[i] if i < len(pothole_areas) else "N/A" # Get area for on-road potholes
@@ -166,13 +156,11 @@ def visualize_pothole_areas(image, filtered_detections, pothole_areas, resolutio
         else: # if not on road pothole, don't display it
             continue
         
-        area_norm = (area_value - min_area) / (max_area - min_area)
-
         rect = plt.Rectangle((x1, y1), x2-x1, y2-y1, fill=False, 
                             edgecolor=color, linewidth=1.5)
         ax.add_patch(rect)
         
-        label = f"#{i+1} {area_text}\nNormalized Area: {area_norm:.4f}"
+        label = f"#{i+1} {area_text}"
         
         text_bbox = dict(facecolor='white', alpha=0.7, edgecolor=color, boxstyle='round,pad=0.5')
         
@@ -196,7 +184,7 @@ def visualize_depth_results(depth_results, save_path, image_name):
     cropped_potholes = depth_results.get('cropped_potholes', [])
     depth_maps = depth_results.get('depth_maps', [])
     relative_depths = depth_results.get('relative_depths', [])
-    normalized_depths = depth_results.get('normalized_depths', [])
+    relative_depths_divided_area = depth_results.get('relative_depths_divided_area', [])
 
     valid_indices = [i for i, crop in enumerate(cropped_potholes) if crop is not None] # Filter out None values (potholes not on road)
     potholes_on_road = len(valid_indices)
@@ -221,8 +209,8 @@ def visualize_depth_results(depth_results, save_path, image_name):
             
             if i < len(relative_depths):
                 relative_depth = relative_depths[i]
-                normalized_depth = normalized_depths[i]
-                axes[idx, 0].set_title(f"Pothole #{i+1}\nDepth: {relative_depth:.2f} (Normalized: {normalized_depth:.2f})")
+                relative_depth_divided_area = relative_depths_divided_area[i]
+                axes[idx, 0].set_title(f"Pothole #{i+1}\nDepth: {relative_depth:.2f} (Divided by area: {relative_depth_divided_area:.2f})")
             else:
                 axes[idx, 0].set_title(f"Pothole #{i+1}")
             
@@ -386,7 +374,7 @@ def visualize_combined_results(pipeline_output, save_path):
     
     # 4. Area Visualization
     ax[1, 0].imshow(image)
-    ax[1, 0].set_title('Potholes with Area Measurements', fontsize=14)
+    ax[1, 0].set_title('Area Estimations', fontsize=14)
     ax[1, 0].axis('off')
     
     # Draw bounding boxes and add area labels
@@ -415,7 +403,7 @@ def visualize_combined_results(pipeline_output, save_path):
     cropped_potholes = depth_estimations.get('cropped_potholes', [])
     depth_maps = depth_estimations.get('depth_maps', [])
     relative_depths = depth_estimations.get('relative_depths', [])
-    normalized_depths = depth_estimations.get('normalized_depths', [])
+    relative_depths_divided_area = depth_estimations.get('relative_depths_divided_area', [])
 
     valid_indices = [i for i, crop in enumerate(cropped_potholes) if crop is not None]
     potholes_on_road = len(valid_indices)
@@ -448,13 +436,13 @@ def visualize_combined_results(pipeline_output, save_path):
                 pothole_ax.text(0.5, 0.5, "No depth", ha='center', va='center', fontsize=8)
             
             if i < len(relative_depths):
-                pothole_ax.set_title(f"#{i+1}: {normalized_depths[i]:.2f}", fontsize=8)
+                pothole_ax.set_title(f"#{i+1}: Depth Value: {relative_depths_divided_area[i]:.2f}", fontsize=8)
             else:
                 pothole_ax.set_title(f"#{i+1}", fontsize=8)
             
             pothole_ax.axis('off')
     
-    ax[1, 1].set_title('Pothole Depth Maps', fontsize=14)
+    ax[1, 1].set_title('Depth Estimation', fontsize=14)
     ax[1, 1].axis('off')
     
     # 6. Categorization+Depth+Area Score Plot
@@ -548,7 +536,7 @@ def create_results_file(filtered_detections, pothole_areas, depth_estimations, p
                 f.write(f"    Normalized Depth: {round(pothole_categorizations['normalized_depths'][i], 4)}\n")
             else:
                 f.write(f"    Estimated Relative Depth: NA\n")
-                
+
             f.write(f"    Categorization: {pothole_categorizations['categories'][i]}\n")
             f.write(f"    Categorization Score: {round(pothole_categorizations['scores'][i], 4)}\n")
 
