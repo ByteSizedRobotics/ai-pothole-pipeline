@@ -3,20 +3,29 @@
 # ├── main.py                     # Main script to run the complete pipeline
 # ├── config.py                   # Configuration parameters
 # ├── modules/
-# │   ├── road_segmentation.py       # Road segmentation using DeepLabV3+
-# │   ├── pothole_detection.py       # Your pothole detection model
-# |   └── models/
-# |       ├── DeepLabV3Plus/
-# |       └── pothole-detection/
+# │   ├── ai_models/
+# │   │   ├── DeepLabV3Plus/      # DeepLavV3+ model for road segmentation
+# │   │   │   └── checkpoints/
+# │   │   ├── DepthAnythingV2/    # DepthAnythingV2 model for depth estimation
+# │   │   │   └── checkpoints/
+# │   │   └── pothole-detection/
+# │   ├── road_segmentation.py    # Road segmentation using DeepLabV3+
+# │   ├── pothole_detection.py    # Pothole detection using YOLOv5
+# │   └── depth_estimation.py     # Depth estimation using DepthAnythingV2
 # ├── pipeline/
 # │   ├── pothole_detection_stage.py      # Stage 1: Detect potholes
 # │   ├── road_segmentation_stage.py      # Stage 2: Road segmentation
-# │   └── pothole_filtering_stage.py      # Stage 3: Filter potholes based on road mask
-# └── utils/
-#     ├── visualization.py        # Visualization utilities
-#     └── io_utils.py             # Input/output utilities
+# │   ├── pothole_filtering_stage.py      # Stage 3: Filter potholes based on road mask
+# │   ├── area_estimation_stage.py        # Stage 4: Estimate area of potholes
+# │   ├── depth_estimation_stage.py       # Stage 5: Estimate depth of potholes
+# │   └── pothole_categorization_stage.py # Stage 6: Categorize potholes based on depth and area
+# └── utils_lib/
+#     ├── DeepLabV3Plus/          # Contains the DeepLabV3+ required librairies for visualizations
+#     │   ├── io_utils.py
+#     │   └── visualization.py
+#     ├── visualization.py        # To save the visualizations/results of the pipeline
+#     └── io_utils.py             # Used to get Images from a directory or a single file
 
-# config.py
 import os
 
 class Config:

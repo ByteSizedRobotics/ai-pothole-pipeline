@@ -1,4 +1,3 @@
-# utils/io_utils.py
 import os
 from glob import glob
 
