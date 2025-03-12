@@ -246,13 +246,13 @@ def visualize_area_depth_results(pothole_categorizations, filtered_detections, s
         categories = [pothole_categorizations['categories'][i] for i in on_road_indices]
         scores = [pothole_categorizations['scores'][i] for i in on_road_indices]
         
-        scatter = ax.scatter(areas, depths, s=100, alpha=0.7, c=scores, cmap='viridis', vmin=0, vmax=2.0)
+        scatter = ax.scatter(areas, depths, s=100, alpha=0.7, c=scores, cmap='viridis', vmin=0, vmax=1.0)
         
         cbar = plt.colorbar(scatter)
         cbar.set_label('Categorization Score')
         
         # category boundaries to the colorbar
-        category_boundaries = [0.0, 0.6, 1.2, 1.8, 2.0]
+        category_boundaries = [0.0, 0.3, 0.6, 0.8, 1.0]
         category_labels = ["Low", "Moderate", "High", "Critical"]
         
         for boundary in category_boundaries:
@@ -454,13 +454,13 @@ def visualize_combined_results(pipeline_output, save_path):
         categories = [pothole_categorizations['categories'][i] for i in on_road_indices]
         scores = [pothole_categorizations['scores'][i] for i in on_road_indices]
         
-        scatter = ax[1,2].scatter(areas, depths, s=100, alpha=0.7, c=scores, cmap='viridis', vmin=0, vmax=2.0)
+        scatter = ax[1,2].scatter(areas, depths, s=100, alpha=0.7, c=scores, cmap='viridis', vmin=0, vmax=1.0)
         
         cbar = plt.colorbar(scatter, ax=ax[1, 2])
         cbar.set_label('Categorization Score')
 
         # category boundaries to the colorbar
-        category_boundaries = [0.0, 0.6, 1.2, 1.8, 2.0]
+        category_boundaries = [0.0, 0.3, 0.6, 0.8, 1.0]
         category_labels = ["Low", "Moderate", "High", "Critical"]
         
         for boundary in category_boundaries:

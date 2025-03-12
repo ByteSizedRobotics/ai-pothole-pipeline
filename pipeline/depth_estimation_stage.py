@@ -14,7 +14,7 @@ class DepthEstimationStage:
         self.depth_estimator = depth_estimator
     
     def process(self, img_path, filtered_detections, pothole_areas, percentile_filter, percentile_low_value, percentile_high_value):
-        print(f"[Stage 5] Estimating depth of the potholes {os.path.basename(img_path)}")
+        print(f"[Stage 5] Estimating depth of the potholes in {os.path.basename(img_path)}")
 
         if img_path.endswith(".jpg") or img_path.endswith(".png"):
             image = cv2.imread(img_path)
