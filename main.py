@@ -7,7 +7,9 @@ from config import Config # config file
 # import models, pipeline stages, visualization functions and utils required by DeepLabV3+
 from modules import RoadSegmentation, PotholeDetection, DepthEstimation
 from pipeline import PotholeDetectionStage, RoadSegmentationStage, PotholeFilteringStage, AreaEstimationStage, DepthEstimationStage, PotholeCategorizationStage
-from utils_lib.visualization import visualize_original_image, visualize_pothole_detections, visualize_full_segmentation, visualize_road_segmentation, visualize_filtered_detections, visualize_depth_results, visualize_area_depth_results, visualize_combined_results, create_results_file
+from utils_lib.visualization import visualize_original_image, visualize_pothole_detections, visualize_full_segmentation, visualize_road_segmentation 
+from utils_lib.visualization import visualize_filtered_detections, visualize_pothole_areas, visualize_depth_results
+from utils_lib.visualization import visualize_area_depth_results, visualize_combined_results, create_results_file
 from utils_lib.io_utils import get_image_files
 
 def parse_args():
@@ -79,16 +81,16 @@ def main():
 
             # Stage 4: Area Estimation
             pothole_areas = area_estimation_stage.process(img_path, filtered_detections)
+            visualize_pothole_areas(image, pothole_areas, save_path, image_name)
 
             # Stage 5: Depth Estimation
             depth_estimations = depth_estimation_stage.process(img_path, filtered_detections, pothole_areas, Config.DEPTH_ANYTHING_PERCENTILE_FILTER['percentile_filter'],
                                 Config.DEPTH_ANYTHING_PERCENTILE_FILTER['percentile_low_value'], Config.DEPTH_ANYTHING_PERCENTILE_FILTER['percentile_high_value'])
             visualize_depth_results(depth_estimations, save_path, image_name)
-
             
             # Stage 6: Pothole Categorization
             pothole_categorizations = pothole_categorization_stage.process(img_path, filtered_detections, pothole_areas, depth_estimations['normalized_depths'])
-            visualize_area_depth_results(pothole_areas, depth_estimations, pothole_categorizations, save_path, image_name)
+            visualize_area_depth_results(pothole_areas, depth_estimations, pothole_categorizations, filtered_detections, save_path, image_name)
 
             process_time = time() - start_time
             print(f"Processing completed in {process_time:.2f} seconds (including saving the visualizations)")
