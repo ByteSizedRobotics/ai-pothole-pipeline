@@ -138,7 +138,7 @@ def visualize_filtered_detections(image, road_mask, filtered_detections, save_pa
     return fig, ax, road_overlay
 
 # Function to visualize area results
-def visualize_pothole_areas(image, filtered_detections, pothole_areas, save_path, image_name):
+def visualize_pothole_areas(image, filtered_detections, pothole_areas, resolution, save_path, image_name):
     fig, ax = plt.subplots(figsize=(12, 8))
     
     ax.imshow(image)
@@ -148,19 +148,32 @@ def visualize_pothole_areas(image, filtered_detections, pothole_areas, save_path
     # Draw bounding boxes and add area labels
     for i, (confidence, bbox, is_on_road, percentage) in enumerate(filtered_detections):
         x1, y1, x2, y2 = bbox
+
+        if resolution == (3280, 2464):
+            width = 3280
+            height = 2464
+        elif resolution == (1280, 720):
+            width = 1280
+            height = 720
+                    
+        max_area = (width/2) * (height/2)
+        min_area = 528
+
         
         if is_on_road:
-            color = 'yellow'
+            color = 'blue'
             area_value = pothole_areas[i] if i < len(pothole_areas) else "N/A" # Get area for on-road potholes
             area_text = f"Area: {area_value:.4f}"
         else: # if not on road pothole, don't display it
             continue
         
+        area_norm = (area_value - min_area) / (max_area - min_area)
+
         rect = plt.Rectangle((x1, y1), x2-x1, y2-y1, fill=False, 
                             edgecolor=color, linewidth=1.5)
         ax.add_patch(rect)
         
-        label = f"#{i+1} (conf: {confidence:.2f})\n{area_text}"
+        label = f"#{i+1} {area_text}\nNormalized Area: {area_norm:.4f}"
         
         text_bbox = dict(facecolor='white', alpha=0.7, edgecolor=color, boxstyle='round,pad=0.5')
         
@@ -295,6 +308,7 @@ def visualize_combined_results(pipeline_output, save_path):
     pothole_areas = pipeline_output['pothole_areas']
     depth_estimations = pipeline_output['depth_estimations']
     pothole_categorizations = pipeline_output['pothole_categorizations']
+    resolution = pipeline_output['resolution']
     
     fig, ax = plt.subplots(2, 3, figsize=(24, 14))
     
@@ -367,18 +381,31 @@ def visualize_combined_results(pipeline_output, save_path):
     for i, (confidence, bbox, is_on_road, percentage) in enumerate(filtered_detections):
         x1, y1, x2, y2 = bbox
         
+        if resolution == (3280, 2464):
+            width = 3280
+            height = 2464
+        elif resolution == (1280, 720):
+            width = 1280
+            height = 720
+                    
+        max_area = (width/2) * (height/2)
+        min_area = 528
+
+        
         if is_on_road:
-            color = 'yellow'
-            area_value = pothole_areas[i] if i < len(pothole_areas) else "N/A"  # Get area for on-road potholes
+            color = 'blue'
+            area_value = pothole_areas[i] if i < len(pothole_areas) else "N/A" # Get area for on-road potholes
             area_text = f"Area: {area_value:.4f}"
-        else:  # if not on road pothole, don't display it
+        else: # if not on road pothole, don't display it
             continue
         
+        area_norm = (area_value - min_area) / (max_area - min_area)
+
         rect = plt.Rectangle((x1, y1), x2-x1, y2-y1, fill=False, 
                             edgecolor=color, linewidth=1.5)
-        ax[1, 0].add_patch(rect)
+        ax.add_patch(rect)
         
-        label = f"#{i+1} (conf: {confidence:.2f})\n{area_text}"
+        label = f"#{i+1} {area_text}\nNormalized Area: {area_norm:.4f}"
         
         text_bbox = dict(facecolor='white', alpha=0.7, edgecolor=color, boxstyle='round,pad=0.5')
         
@@ -407,9 +434,9 @@ def visualize_combined_results(pipeline_output, save_path):
             row = idx // grid_size
             col = idx % grid_size
             
-            # Create a subplot for each pothole
-            pothole_ax = pothole_grid.inset_axes([col/grid_size, 1-(row+1)/grid_size, 
-                                                1/grid_size, 1/grid_size])
+            # Create a subplot for each pothole with spacing
+            pothole_ax = pothole_grid.inset_axes([col/grid_size + 0.01, 1-(row+1)/grid_size + 0.01, 
+                                                1/grid_size - 0.02, 1/grid_size - 0.02])
             
             if i < len(depth_maps) and depth_maps[i] is not None:
                 im = pothole_ax.imshow(depth_maps[i], cmap='viridis')

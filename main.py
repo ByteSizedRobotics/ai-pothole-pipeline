@@ -62,6 +62,7 @@ def main():
             image = Image.open(img_path).convert('RGB')
             image_name = os.path.splitext(os.path.basename(img_path))[0]
             save_path = Config.OUTPUT_PATH
+            resolution = Config.IMAGE_RESOLUTION
             visualize_original_image(image, save_path, image_name)
 
             # Stage 1: Pothole Detection
@@ -81,7 +82,7 @@ def main():
 
             # Stage 4: Area Estimation
             pothole_areas = area_estimation_stage.process(img_path, filtered_detections)
-            visualize_pothole_areas(image, pothole_areas, save_path, image_name)
+            visualize_pothole_areas(image, filtered_detections, pothole_areas, resolution, save_path, image_name)
 
             # Stage 5: Depth Estimation
             depth_estimations = depth_estimation_stage.process(img_path, filtered_detections, pothole_areas, Config.DEPTH_ANYTHING_PERCENTILE_FILTER['percentile_filter'],
@@ -109,7 +110,8 @@ def main():
                 'detections' : pothole_detections,
                 'pothole_areas': pothole_areas,
                 'depth_estimations': depth_estimations,
-                'pothole_categorizations': pothole_categorizations
+                'pothole_categorizations': pothole_categorizations,
+                'resolution': resolution
             }
 
             visualize_combined_results(pipeline_output, Config.OUTPUT_PATH)
