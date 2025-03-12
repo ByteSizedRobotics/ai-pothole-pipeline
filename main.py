@@ -7,7 +7,7 @@ from config import Config # config file
 # import models, pipeline stages, visualization functions and utils required by DeepLabV3+
 from modules import RoadSegmentation, PotholeDetection, DepthEstimation
 from pipeline import PotholeDetectionStage, RoadSegmentationStage, PotholeFilteringStage, AreaEstimationStage, DepthEstimationStage, PotholeCategorizationStage
-from utils_lib.visualization import visualize_pipeline_results, create_results_file
+from utils_lib.visualization import visualize_original_image, visualize_pothole_detections, visualize_full_segmentation, visualize_road_segmentation, visualize_filtered_detections, visualize_depth_results, visualize_area_depth_results, visualize_combined_results, create_results_file
 from utils_lib.io_utils import get_image_files
 
 def parse_args():
@@ -57,29 +57,40 @@ def main():
         print(f"\nProcessing {os.path.basename(img_path)}...")
         start_time = time()
         try:
+            image = Image.open(img_path).convert('RGB')
+            image_name = os.path.basename(img_path)
+            save_path = Config.OUTPUT_PATH
+            visualize_original_image(image, save_path, image_name)
+
             # Stage 1: Pothole Detection
             pothole_detections = detection_stage.process(img_path)
-            
+            visualize_pothole_detections(image, pothole_detections, save_path, image_name)
+
             # TODO: NATHAN add a check here to see if there are any potholes detected
             # if no potholes detected => no need to do segmentation and filtering
             # Stage 2: Road Segmentation
             road_segmentation = segmentation_stage.process(img_path)
-            
+            visualize_full_segmentation(road_segmentation['full_segmentation'], save_path, image_name)
+            visualize_road_segmentation(road_segmentation['road_mask'], save_path, image_name)
+
             # Stage 3: Filter Potholes
             filtered_detections = filtering_stage.process(img_path, pothole_detections, road_segmentation)
+            visualize_filtered_detections(image, road_segmentation['road_mask'], filtered_detections, save_path, image_name)
 
-            # Stage 4: Area Estimation
-            pothole_areas = area_estimation_stage.process(img_path, filtered_detections)
-
-            # Stage 5: Depth Estimation
+            # Stage 4: Depth Estimation
             depth_estimations = depth_estimation_stage.process(img_path, filtered_detections, pothole_areas, Config.DEPTH_ANYTHING_PERCENTILE_FILTER['percentile_filter'],
                                 Config.DEPTH_ANYTHING_PERCENTILE_FILTER['percentile_low_value'], Config.DEPTH_ANYTHING_PERCENTILE_FILTER['percentile_high_value'])
+            visualize_depth_results(depth_estimations, save_path, image_name)
+
+            # Stage 5: Area Estimation
+            pothole_areas = area_estimation_stage.process(img_path, filtered_detections)
             
             # Stage 6: Pothole Categorization
             pothole_categorizations = pothole_categorization_stage.process(img_path, filtered_detections, pothole_areas, depth_estimations['normalized_depths'])
+            visualize_area_depth_results(pothole_areas, depth_estimations, pothole_categorizations, save_path, image_name)
 
             process_time = time() - start_time
-            print(f"Processing completed in {process_time:.2f} seconds")
+            print(f"Processing completed in {process_time:.2f} seconds (including saving the visualizations)")
             
             # Print summary
             all_potholes = len(filtered_detections)
@@ -98,8 +109,9 @@ def main():
                 'pothole_categorizations': pothole_categorizations
             }
 
-            # save pipeline results and create results .txt file
-            visualize_pipeline_results(pipeline_output, Config.OUTPUT_PATH)
+            visualize_combined_results(pipeline_output, Config.OUTPUT_PATH)
+
+            # save results in .txt file
             create_results_file(filtered_detections, pothole_areas, depth_estimations, pothole_categorizations, Config.OUTPUT_PATH, img_path)
             print(f"Results saved to {Config.OUTPUT_PATH}")
             
