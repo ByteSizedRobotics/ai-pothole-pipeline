@@ -159,7 +159,6 @@ def visualize_pothole_areas(image, filtered_detections, pothole_areas, resolutio
         max_area = (width/2) * (height/2)
         min_area = 528
 
-        
         if is_on_road:
             color = 'blue'
             area_value = pothole_areas[i] if i < len(pothole_areas) else "N/A" # Get area for on-road potholes
@@ -248,7 +247,7 @@ def visualize_depth_results(depth_results, save_path, image_name):
     return fig
 
 # Function to visualize area, depth and categorization results
-def visualize_area_depth_results(pothole_areas, depth_estimations, pothole_categorizations, filtered_detections, save_path, image_name):
+def visualize_area_depth_results(pothole_categorizations, filtered_detections, save_path, image_name):
     fig, ax = plt.subplots(figsize=(10, 8))
     
     on_road_indices = [i for i, (_, _, is_on_road, _) in enumerate(filtered_detections) if is_on_road] # Filter for potholes on road only
@@ -258,15 +257,29 @@ def visualize_area_depth_results(pothole_areas, depth_estimations, pothole_categ
         ax.set_xlim(0, 1)
         ax.set_ylim(0, 1)
     else:
-        areas = [pothole_areas[i] for i in on_road_indices]
-        depths = [depth_estimations['normalized_depths'][i] for i in on_road_indices]
+        areas = [pothole_categorizations['normalized_areas'][i] for i in on_road_indices]
+        depths = [pothole_categorizations['normalized_depths'][i] for i in on_road_indices]
         categories = [pothole_categorizations['categories'][i] for i in on_road_indices]
         scores = [pothole_categorizations['scores'][i] for i in on_road_indices]
         
-        scatter = ax.scatter(areas, depths, s=100, alpha=0.7, c=scores, cmap='viridis')
+        scatter = ax.scatter(areas, depths, s=100, alpha=0.7, c=scores, cmap='viridis', vmin=0, vmax=2.0)
         
         cbar = plt.colorbar(scatter)
         cbar.set_label('Categorization Score')
+        
+        # category boundaries to the colorbar
+        category_boundaries = [0.0, 0.6, 1.2, 1.8, 2.0]
+        category_labels = ["Low", "Moderate", "High", "Critical"]
+        
+        for boundary in category_boundaries:
+            norm_boundary = boundary / 2.0  # Normalize to [0,1] range for colorbar
+            cbar.ax.axhline(y=norm_boundary, color='white', linestyle='-', linewidth=1.5)
+        
+        positions = [(category_boundaries[i] + category_boundaries[i+1])/2 for i in range(len(category_boundaries)-1)]
+        for pos, label in zip(positions, category_labels):
+            norm_pos = pos / 2.0  # Normalize to [0,1] range for colorbar
+            cbar.ax.text(1.5, norm_pos, label, ha='left', va='center', fontsize=9, color='black',
+                        bbox=dict(boxstyle="round,pad=0.3", fc="white", alpha=0.7))
         
         for i, idx in enumerate(on_road_indices):
             ax.annotate(f"#{idx+1}: {categories[i]}", 
@@ -278,7 +291,7 @@ def visualize_area_depth_results(pothole_areas, depth_estimations, pothole_categ
         
         ax.set_xlabel('Pothole Area (normalized)')
         ax.set_ylabel('Pothole Depth (normalized)')
-        ax.set_title('Pothole Area vs Depth with Categorization')
+        ax.set_title('Normalized Pothole Area vs Depth used for Categorization')
         
         ax.grid(True, linestyle='--', alpha=0.7)
         
@@ -308,7 +321,6 @@ def visualize_combined_results(pipeline_output, save_path):
     pothole_areas = pipeline_output['pothole_areas']
     depth_estimations = pipeline_output['depth_estimations']
     pothole_categorizations = pipeline_output['pothole_categorizations']
-    resolution = pipeline_output['resolution']
     
     fig, ax = plt.subplots(2, 3, figsize=(24, 14))
     
@@ -381,17 +393,6 @@ def visualize_combined_results(pipeline_output, save_path):
     for i, (confidence, bbox, is_on_road, percentage) in enumerate(filtered_detections):
         x1, y1, x2, y2 = bbox
         
-        if resolution == (3280, 2464):
-            width = 3280
-            height = 2464
-        elif resolution == (1280, 720):
-            width = 1280
-            height = 720
-                    
-        max_area = (width/2) * (height/2)
-        min_area = 528
-
-        
         if is_on_road:
             color = 'blue'
             area_value = pothole_areas[i] if i < len(pothole_areas) else "N/A" # Get area for on-road potholes
@@ -399,13 +400,11 @@ def visualize_combined_results(pipeline_output, save_path):
         else: # if not on road pothole, don't display it
             continue
         
-        area_norm = (area_value - min_area) / (max_area - min_area)
-
         rect = plt.Rectangle((x1, y1), x2-x1, y2-y1, fill=False, 
                             edgecolor=color, linewidth=1.5)
-        ax.add_patch(rect)
+        ax[1,0].add_patch(rect)
         
-        label = f"#{i+1} {area_text}\nNormalized Area: {area_norm:.4f}"
+        label = f"#{i+1} {area_text}"
         
         text_bbox = dict(facecolor='white', alpha=0.7, edgecolor=color, boxstyle='round,pad=0.5')
         
@@ -435,8 +434,8 @@ def visualize_combined_results(pipeline_output, save_path):
             col = idx % grid_size
             
             # Create a subplot for each pothole with spacing
-            pothole_ax = pothole_grid.inset_axes([col/grid_size + 0.01, 1-(row+1)/grid_size + 0.01, 
-                                                1/grid_size - 0.02, 1/grid_size - 0.02])
+            pothole_ax = pothole_grid.inset_axes([col/grid_size + 0.04, 1-(row+1)/grid_size + 0.04, 
+                                                1/grid_size - 0.08, 1/grid_size - 0.08])
             
             if i < len(depth_maps) and depth_maps[i] is not None:
                 im = pothole_ax.imshow(depth_maps[i], cmap='viridis')
@@ -466,15 +465,29 @@ def visualize_combined_results(pipeline_output, save_path):
         ax[1, 2].set_xlim(0, 1)
         ax[1, 2].set_ylim(0, 1)
     else:
-        areas = [pothole_areas[i] for i in on_road_indices]
-        depths = [depth_estimations['normalized_depths'][i] for i in on_road_indices]
+        areas = [pothole_categorizations['normalized_areas'][i] for i in on_road_indices]
+        depths = [pothole_categorizations['normalized_depths'][i] for i in on_road_indices]
         categories = [pothole_categorizations['categories'][i] for i in on_road_indices]
         scores = [pothole_categorizations['scores'][i] for i in on_road_indices]
         
-        scatter = ax[1, 2].scatter(areas, depths, s=100, alpha=0.7, c=scores, cmap='viridis')
+        scatter = ax.scatter(areas, depths, s=100, alpha=0.7, c=scores, cmap='viridis', vmin=0, vmax=2.0)
         
         cbar = plt.colorbar(scatter, ax=ax[1, 2])
         cbar.set_label('Categorization Score')
+
+        # category boundaries to the colorbar
+        category_boundaries = [0.0, 0.6, 1.2, 1.8, 2.0]
+        category_labels = ["Low", "Moderate", "High", "Critical"]
+        
+        for boundary in category_boundaries:
+            norm_boundary = boundary / 2.0  # Normalize to [0,1] range for colorbar
+            cbar.ax.axhline(y=norm_boundary, color='white', linestyle='-', linewidth=1.5)
+        
+        positions = [(category_boundaries[i] + category_boundaries[i+1])/2 for i in range(len(category_boundaries)-1)]
+        for pos, label in zip(positions, category_labels):
+            norm_pos = pos / 2.0  # Normalize to [0,1] range for colorbar
+            cbar.ax.text(1.5, norm_pos, label, ha='left', va='center', fontsize=9, color='black',
+                        bbox=dict(boxstyle="round,pad=0.3", fc="white", alpha=0.7))
         
         for i, idx in enumerate(on_road_indices):
             ax[1, 2].annotate(f"#{idx+1}: {categories[i]}", 
@@ -526,12 +539,16 @@ def create_results_file(filtered_detections, pothole_areas, depth_estimations, p
             f.write(f"    % Pixels in box which are road: {percentage:.2f}\n")
             if is_on_road:
                 f.write(f"    Estimated Area: {round(pothole_areas[i], 4)}\n")
+                f.write(f"    Normalized Area: {round(pothole_categorizations['normalized_areas'][i], 4)}\n")
             else:
                 f.write(f"    Estimated Area: NA\n")
+
             if is_on_road:
-                f.write(f"    Estimated Depth: {round(depth_estimations['normalized_depths'][i], 4)}\n")
+                f.write(f"    Estimated Relative Depth: {round(depth_estimations['relative_depths_divided_area'][i], 4)}\n")
+                f.write(f"    Normalized Depth: {round(pothole_categorizations['normalized_depths'][i], 4)}\n")
             else:
-                f.write(f"    Estimated Depth: NA\n")
+                f.write(f"    Estimated Relative Depth: NA\n")
+                
             f.write(f"    Categorization: {pothole_categorizations['categories'][i]}\n")
             f.write(f"    Categorization Score: {round(pothole_categorizations['scores'][i], 4)}\n")
 
