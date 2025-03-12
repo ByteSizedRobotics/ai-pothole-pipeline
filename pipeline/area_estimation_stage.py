@@ -24,6 +24,7 @@ class AreaEstimationStage:
                 x1, y1, x2, y2 = bbox
                 bounding_box_area = (x2-x1)*(y2-y1)
                 y_distance_middle_pothole = (y1+y2)/2
+                x_distance_middle_pothole = (x1+x2)/2
 
                 # TODO: NATHAN update this to have the different supported resolutions we are planning to use
                 # TODO: NATHAN need to calculate the other scaling factors for the other resolutions
@@ -33,13 +34,18 @@ class AreaEstimationStage:
                     c = 0.6036184827412467
                     d = -0.00036558500089469364
                     if y_distance_middle_pothole >= 800:
-                        scaling_factor = a/(b + c*y_distance_middle_pothole + d*(y_distance_middle_pothole**2))
-                    else:
-                        scaling_factor = a/(b + c*800 + d*(800**2))
+                        y_scaling_factor = a/(b + c*y_distance_middle_pothole + d*(y_distance_middle_pothole**2))
+                    else: # if the pothole is above the 800 pixel mark, we use the scaling factor at 800 pixels (this is due to the properties of the curve => starts dropping down after 800 pixels)
+                        y_scaling_factor = a/(b + c*800 + d*(800**2))
+
+                    if x_distance_middle_pothole <= 1640:
+                        x_scaling_factor = 4*(10**(-9))+6*(10**(-6))
+                    elif x_distance_middle_pothole > 1640:
+                        x_scaling_factor = -4*(10**(-9))+2*(10**(-5))
 
                 # elif self.resolution == (1280, 720):
                 
-                area = scaling_factor * bounding_box_area
+                area = x_scaling_factor * y_scaling_factor * (bounding_box_area)**2 / 0.25
                 pothole_areas.append(area)
             else:
                 pothole_areas.append(-1) # -1 means pothole is not on the road
