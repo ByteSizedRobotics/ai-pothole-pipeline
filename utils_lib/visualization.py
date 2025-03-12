@@ -2,10 +2,11 @@ import math
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib.patches as mpatches
 from PIL import Image
 import os
 import sys
+from mpl_toolkits.axes_grid1 import make_axes_locatable
+
 sys.path.append(os.path.abspath(os.path.dirname(__file__))) 
 from DeepLabV3Lib import Cityscapes
 
@@ -136,6 +137,48 @@ def visualize_filtered_detections(image, road_mask, filtered_detections, save_pa
     plt.close(fig)
     return fig, ax, road_overlay
 
+# Function to visualize area results
+def visualize_pothole_areas(image, filtered_detections, pothole_areas, save_path, image_name):
+    fig, ax = plt.subplots(figsize=(12, 8))
+    
+    ax.imshow(image)
+    ax.set_title('Potholes with Area Measurements', fontsize=14)
+    ax.axis('off')
+    
+    # Draw bounding boxes and add area labels
+    for i, (confidence, bbox, is_on_road, percentage) in enumerate(filtered_detections):
+        x1, y1, x2, y2 = bbox
+        
+        if is_on_road:
+            color = 'yellow'
+            area_value = pothole_areas[i] if i < len(pothole_areas) else "N/A" # Get area for on-road potholes
+            area_text = f"Area: {area_value:.4f}"
+        else: # if not on road pothole, don't display it
+            continue
+        
+        rect = plt.Rectangle((x1, y1), x2-x1, y2-y1, fill=False, 
+                            edgecolor=color, linewidth=1.5)
+        ax.add_patch(rect)
+        
+        label = f"#{i+1} (conf: {confidence:.2f})\n{area_text}"
+        
+        text_bbox = dict(facecolor='white', alpha=0.7, edgecolor=color, boxstyle='round,pad=0.5')
+        
+        ax.text(x1, y1-5, label, color=color, fontsize=10,
+                verticalalignment='bottom', bbox=text_bbox)
+    
+    plt.figtext(0.5, 0.01, 
+                "Potholes on road with area measurements\n", 
+                ha="center", fontsize=10, bbox={"facecolor":"white", "alpha":0.8, "pad":5})
+    
+    plt.tight_layout(rect=[0, 0.03, 1, 0.97])  # Make room for the bottom text
+    
+    area_viz_save_path = os.path.join(save_path, f'{image_name}_5_pothole_areas.png')
+    plt.savefig(area_viz_save_path, dpi=300, bbox_inches='tight')
+    plt.close(fig)
+    
+    return fig
+
 # Function to visualize depth results
 def visualize_depth_results(depth_results, save_path, image_name):
     cropped_potholes = depth_results.get('cropped_potholes', [])
@@ -186,7 +229,7 @@ def visualize_depth_results(depth_results, save_path, image_name):
     plt.tight_layout()
     plt.subplots_adjust(top=0.95)
     
-    depth_save_path = os.path.join(save_path, f'{image_name}_5_depth_visualization.png')
+    depth_save_path = os.path.join(save_path, f'{image_name}_6_depth_visualization.png')
     plt.savefig(depth_save_path, dpi=300, bbox_inches='tight')
     plt.close()
     return fig
@@ -235,13 +278,12 @@ def visualize_area_depth_results(pothole_areas, depth_estimations, pothole_categ
     
     plt.tight_layout()
     
-    area_depth_save_path = os.path.join(save_path, f'{image_name}_6_area_depth_visualization.png')
+    area_depth_save_path = os.path.join(save_path, f'{image_name}_7_area_depth_visualization.png')
     plt.savefig(area_depth_save_path, dpi=300, bbox_inches='tight')
     plt.close(fig)
     
     return fig
 
-# TODO: NATHAN remove the visualize results part which combines the imgs into 1 figure?
 def visualize_combined_results(pipeline_output, save_path):
     # Extract data from pipeline output
     image = pipeline_output['image']
@@ -250,33 +292,28 @@ def visualize_combined_results(pipeline_output, save_path):
     full_segmentation = pipeline_output['full_segmentation']
     detections = pipeline_output['detections']
     filtered_detections = pipeline_output['filtered_detections']
+    pothole_areas = pipeline_output['pothole_areas']
+    depth_estimations = pipeline_output['depth_estimations']
+    pothole_categorizations = pipeline_output['pothole_categorizations']
     
-    # Create figure with 5 subplots
-    fig, ax = plt.subplots(2, 3, figsize=(25, 12))
+    fig, ax = plt.subplots(2, 3, figsize=(24, 14))
     
-    # 1. Original image 
+    # 1. Original Detections
     ax[0, 0].imshow(image)
-    ax[0, 0].set_title('Original Image')
+    ax[0, 0].set_title('Original Pothole Detections', fontsize=14)
     ax[0, 0].axis('off')
-
-    # 2. Original YOLO Detections
-    ax[0, 1].imshow(image)
-    ax[0, 1].set_title('Original YOLO Detections')
-    ax[0, 1].axis('off')
     
-    # Draw original YOLO pothole bounding boxes
     for i, (*bbox, confidence, classType) in enumerate(detections.xyxy[0].tolist()):
         x1, y1, x2, y2 = map(int, bbox)
         
-        # Draw bounding box in blue for original detections
         rect = plt.Rectangle((x1, y1), x2-x1, y2-y1, fill=False, 
-                            edgecolor='blue', linewidth=1.5)
-        ax[0, 1].add_patch(rect)
+                            edgecolor='blue', linewidth=1.5) # blue for OG detections
+        ax[0, 0].add_patch(rect)
         if classType == 0:
             label = f"#{i+1} (confidence: {confidence:.2f})"
         else:
             label = f"{classType} (confidence: {confidence:.2f})"
-        ax[0, 1].text(x1, y1-20, label, color='blue', fontsize=8,
+        ax[0, 0].text(x1, y1-20, label, color='blue', fontsize=8,
                   bbox=dict(facecolor='white', alpha=0.7))
     
     # 2. Full Segmentation
@@ -284,29 +321,13 @@ def visualize_combined_results(pipeline_output, save_path):
     colorized_preds = decode_fn(full_segmentation).astype('uint8')
     colorized_preds = Image.fromarray(colorized_preds)
 
-    ax[1, 0].imshow(colorized_preds)
-    ax[1, 0].set_title('Full Segmentation')
-    ax[1, 0].axis('off')
-
-    class_colors = [color for _, color in cityscapes_classes.values()]
-    class_names = [name for name, _ in cityscapes_classes.values()]
+    ax[0, 1].imshow(colorized_preds)
+    ax[0, 1].set_title('Full Segmentation', fontsize=14)
+    ax[0, 1].axis('off')
     
-    patches = [mpatches.Patch(color=np.array(color)/255.0, label=class_name) 
-               for class_name, color in zip(class_names, class_colors)]
-    
-    ax[1, 0].legend(handles=patches, bbox_to_anchor=(1.05, 1), 
-                    loc='upper left', borderaxespad=0.)
-    
-    # 3. Road segmentation
-    road_vis = np.zeros((road_mask.shape[0], road_mask.shape[1], 3), dtype=np.uint8)
-    road_color = np.array(cityscapes_classes[1][1], dtype=np.uint8)  # Road color
-    road_vis[road_mask == 1] = road_color
-    ax[1, 1].imshow(road_vis)
-    ax[1, 1].set_title('Road Segmentation')
-    ax[1, 1].axis('off')
-    
-    # 5. Combined visualization with filtered potholes
+    # 3. Filtered Detections
     image_array = np.array(image)
+    road_color = np.array(cityscapes_classes[1][1], dtype=np.uint8)  # Road color
     
     # Create overlay with road
     road_overlay = image_array.copy()
@@ -314,9 +335,9 @@ def visualize_combined_results(pipeline_output, save_path):
     road_overlay = road_overlay * (1 - overlay_mask) + road_color * overlay_mask
     road_overlay = road_overlay.astype(np.uint8)
     
-    ax[1, 2].imshow(road_overlay)
-    ax[1, 2].set_title('Potholes on Road')
-    ax[1, 2].axis('off')
+    ax[0, 2].imshow(road_overlay)
+    ax[0, 2].set_title('Filtered Potholes (Road Overlay)', fontsize=14)
+    ax[0, 2].axis('off')
     
     # Draw filtered pothole bounding boxes
     for i, (confidence, bbox, is_on_road, percentage) in enumerate(filtered_detections):
@@ -333,13 +354,124 @@ def visualize_combined_results(pipeline_output, save_path):
         
         rect = plt.Rectangle((x1, y1), x2-x1, y2-y1, fill=False, 
                             edgecolor=color, linewidth=1.5)
-        ax[1, 2].add_patch(rect)
-        ax[1, 2].text(x1, y1-20, label, color=color, fontsize=8,
+        ax[0, 2].add_patch(rect)
+        ax[0, 2].text(x1, y1-20, label, color=color, fontsize=8,
                   bbox=dict(facecolor='white', alpha=0.7))
+    
+    # 4. Area Visualization
+    ax[1, 0].imshow(image)
+    ax[1, 0].set_title('Potholes with Area Measurements', fontsize=14)
+    ax[1, 0].axis('off')
+    
+    # Draw bounding boxes and add area labels
+    for i, (confidence, bbox, is_on_road, percentage) in enumerate(filtered_detections):
+        x1, y1, x2, y2 = bbox
+        
+        if is_on_road:
+            color = 'yellow'
+            area_value = pothole_areas[i] if i < len(pothole_areas) else "N/A"  # Get area for on-road potholes
+            area_text = f"Area: {area_value:.4f}"
+        else:  # if not on road pothole, don't display it
+            continue
+        
+        rect = plt.Rectangle((x1, y1), x2-x1, y2-y1, fill=False, 
+                            edgecolor=color, linewidth=1.5)
+        ax[1, 0].add_patch(rect)
+        
+        label = f"#{i+1} (conf: {confidence:.2f})\n{area_text}"
+        
+        text_bbox = dict(facecolor='white', alpha=0.7, edgecolor=color, boxstyle='round,pad=0.5')
+        
+        ax[1, 0].text(x1, y1-5, label, color=color, fontsize=10,
+                verticalalignment='bottom', bbox=text_bbox)
+    
+    # 5. Depth Visualization
+    cropped_potholes = depth_estimations.get('cropped_potholes', [])
+    depth_maps = depth_estimations.get('depth_maps', [])
+    relative_depths = depth_estimations.get('relative_depths', [])
+    normalized_depths = depth_estimations.get('normalized_depths', [])
+
+    valid_indices = [i for i, crop in enumerate(cropped_potholes) if crop is not None]
+    potholes_on_road = len(valid_indices)
+    
+    if potholes_on_road == 0:
+        ax[1, 1].text(0.5, 0.5, "No potholes detected on road", fontsize=12, ha='center', va='center')
+        ax[1, 1].set_xlim(0, 1)
+        ax[1, 1].set_ylim(0, 1)
+    else:
+        grid_size = math.ceil(math.sqrt(potholes_on_road))
+        pothole_grid = ax[1, 1].inset_axes([0, 0, 1, 1])
+        pothole_grid.axis('off')
+        
+        for idx, i in enumerate(valid_indices):
+            row = idx // grid_size
+            col = idx % grid_size
+            
+            # Create a subplot for each pothole
+            pothole_ax = pothole_grid.inset_axes([col/grid_size, 1-(row+1)/grid_size, 
+                                                1/grid_size, 1/grid_size])
+            
+            if i < len(depth_maps) and depth_maps[i] is not None:
+                im = pothole_ax.imshow(depth_maps[i], cmap='viridis')
+                
+                # Add a tiny colorbar
+                divider = make_axes_locatable(pothole_ax)
+                cax = divider.append_axes("right", size="5%", pad=0.05)
+                plt.colorbar(im, cax=cax)
+            else:
+                pothole_ax.text(0.5, 0.5, "No depth", ha='center', va='center', fontsize=8)
+            
+            if i < len(relative_depths):
+                pothole_ax.set_title(f"#{i+1}: {normalized_depths[i]:.2f}", fontsize=8)
+            else:
+                pothole_ax.set_title(f"#{i+1}", fontsize=8)
+            
+            pothole_ax.axis('off')
+    
+    ax[1, 1].set_title('Pothole Depth Maps', fontsize=14)
+    ax[1, 1].axis('off')
+    
+    # 6. Categorization+Depth+Area Score Plot
+    on_road_indices = [i for i, (_, _, is_on_road, _) in enumerate(filtered_detections) if is_on_road]
+
+    if not on_road_indices:
+        ax[1, 2].text(0.5, 0.5, "No potholes detected on road", fontsize=12, ha='center', va='center')
+        ax[1, 2].set_xlim(0, 1)
+        ax[1, 2].set_ylim(0, 1)
+    else:
+        areas = [pothole_areas[i] for i in on_road_indices]
+        depths = [depth_estimations['normalized_depths'][i] for i in on_road_indices]
+        categories = [pothole_categorizations['categories'][i] for i in on_road_indices]
+        scores = [pothole_categorizations['scores'][i] for i in on_road_indices]
+        
+        scatter = ax[1, 2].scatter(areas, depths, s=100, alpha=0.7, c=scores, cmap='viridis')
+        
+        cbar = plt.colorbar(scatter, ax=ax[1, 2])
+        cbar.set_label('Categorization Score')
+        
+        for i, idx in enumerate(on_road_indices):
+            ax[1, 2].annotate(f"#{idx+1}: {categories[i]}", 
+                        xy=(areas[i], depths[i]),
+                        xytext=(5, 5),
+                        textcoords='offset points',
+                        fontsize=9,
+                        bbox=dict(boxstyle="round,pad=0.3", fc="white", alpha=0.7))
+        
+        ax[1, 2].set_xlabel('Pothole Area (normalized)')
+        ax[1, 2].set_ylabel('Pothole Depth (normalized)')
+        ax[1, 2].set_title('Pothole Area vs Depth with Categorization', fontsize=14)
+        
+        ax[1, 2].grid(True, linestyle='--', alpha=0.7)
+        
+        unique_categories = list(set(categories))
+        handles = [plt.Line2D([0], [0], marker='o', color='w', 
+                              markerfacecolor=plt.cm.viridis(0.2 + i/len(unique_categories)), 
+                              markersize=10, label=cat) 
+                  for i, cat in enumerate(unique_categories)]
+        ax[1, 2].legend(handles=handles, title="Categories", loc="best")
     
     plt.tight_layout()
     
-
     combined_save_path = os.path.join(save_path, f'{os.path.splitext(os.path.basename(image_path))[0]}_combined.png')
     plt.savefig(combined_save_path, dpi=300, bbox_inches='tight')    
     plt.close()
