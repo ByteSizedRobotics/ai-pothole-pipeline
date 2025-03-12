@@ -167,10 +167,6 @@ def visualize_pothole_areas(image, filtered_detections, pothole_areas, save_path
         ax.text(x1, y1-5, label, color=color, fontsize=10,
                 verticalalignment='bottom', bbox=text_bbox)
     
-    plt.figtext(0.5, 0.01, 
-                "Potholes on road with area measurements\n", 
-                ha="center", fontsize=10, bbox={"facecolor":"white", "alpha":0.8, "pad":5})
-    
     plt.tight_layout(rect=[0, 0.03, 1, 0.97])  # Make room for the bottom text
     
     area_viz_save_path = os.path.join(save_path, f'{image_name}_5_pothole_areas.png')
@@ -260,12 +256,12 @@ def visualize_area_depth_results(pothole_categorizations, filtered_detections, s
         category_labels = ["Low", "Moderate", "High", "Critical"]
         
         for boundary in category_boundaries:
-            norm_boundary = boundary / 2.0  # Normalize to [0,1] range for colorbar
+            norm_boundary = boundary
             cbar.ax.axhline(y=norm_boundary, color='white', linestyle='-', linewidth=1.5)
         
         positions = [(category_boundaries[i] + category_boundaries[i+1])/2 for i in range(len(category_boundaries)-1)]
         for pos, label in zip(positions, category_labels):
-            norm_pos = pos / 2.0  # Normalize to [0,1] range for colorbar
+            norm_pos = pos
             cbar.ax.text(1.5, norm_pos, label, ha='left', va='center', fontsize=9, color='black',
                         bbox=dict(boxstyle="round,pad=0.3", fc="white", alpha=0.7))
         
@@ -458,7 +454,7 @@ def visualize_combined_results(pipeline_output, save_path):
         categories = [pothole_categorizations['categories'][i] for i in on_road_indices]
         scores = [pothole_categorizations['scores'][i] for i in on_road_indices]
         
-        scatter = ax.scatter(areas, depths, s=100, alpha=0.7, c=scores, cmap='viridis', vmin=0, vmax=2.0)
+        scatter = ax[1,2].scatter(areas, depths, s=100, alpha=0.7, c=scores, cmap='viridis', vmin=0, vmax=2.0)
         
         cbar = plt.colorbar(scatter, ax=ax[1, 2])
         cbar.set_label('Categorization Score')
@@ -468,12 +464,12 @@ def visualize_combined_results(pipeline_output, save_path):
         category_labels = ["Low", "Moderate", "High", "Critical"]
         
         for boundary in category_boundaries:
-            norm_boundary = boundary / 2.0  # Normalize to [0,1] range for colorbar
+            norm_boundary = boundary
             cbar.ax.axhline(y=norm_boundary, color='white', linestyle='-', linewidth=1.5)
         
         positions = [(category_boundaries[i] + category_boundaries[i+1])/2 for i in range(len(category_boundaries)-1)]
         for pos, label in zip(positions, category_labels):
-            norm_pos = pos / 2.0  # Normalize to [0,1] range for colorbar
+            norm_pos = pos
             cbar.ax.text(1.5, norm_pos, label, ha='left', va='center', fontsize=9, color='black',
                         bbox=dict(boxstyle="round,pad=0.3", fc="white", alpha=0.7))
         

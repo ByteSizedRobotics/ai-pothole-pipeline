@@ -90,7 +90,7 @@ def main():
             
             # Stage 6: Pothole Categorization
             pothole_categorizations = pothole_categorization_stage.process(img_path, filtered_detections, pothole_areas, depth_estimations['relative_depths_divided_area'])
-            visualize_area_depth_results(pothole_areas, depth_estimations, pothole_categorizations, filtered_detections, save_path, image_name)
+            visualize_area_depth_results(pothole_categorizations, filtered_detections, save_path, image_name)
 
             process_time = time() - start_time
             print(f"Processing completed in {process_time:.2f} seconds (including saving the visualizations)")

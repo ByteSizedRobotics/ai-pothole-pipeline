@@ -18,11 +18,6 @@ class AreaEstimationStage:
         
         pothole_areas = []
 
-        a = -0.00022788150560381466
-        b = -249.57544427170112
-        c = 0.6036184827412467
-        d = -0.00036558500089469364
-
         for _, bbox, is_on_road, _ in filtered_detections:
             area = 0
             if (is_on_road):
@@ -33,10 +28,12 @@ class AreaEstimationStage:
                 # TODO: NATHAN update this to have the different supported resolutions we are planning to use
                 # TODO: NATHAN need to calculate the other scaling factors for the other resolutions
                 if self.resolution == (3280, 2464):
+                    a = -0.00022788150560381466
+                    b = -249.57544427170112
+                    c = 0.6036184827412467
+                    d = -0.00036558500089469364
                     scaling_factor = a/(b + c*y_distance_middle_pothole + d*(y_distance_middle_pothole**2))
                 # elif self.resolution == (1280, 720):
-                #     width = 1280
-                #     height = 720
                 
                 area = scaling_factor * bounding_box_area
                 pothole_areas.append(area)
