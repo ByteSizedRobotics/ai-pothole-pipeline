@@ -66,10 +66,10 @@ class PotholeCategorizationStage:
                 min_area_y_distance_middle_pothole = (min_area_top_left_coord[1] + min_area_bot_right_coord[1]) / 2
 
                 scaling_factor = a/(b + c*min_area_y_distance_middle_pothole + d*(min_area_y_distance_middle_pothole**2))
-                min_area = scaling_factor * min_area
+                min_area_final = scaling_factor * min_area
 
                 ##### calculate the normalized area => [0, 1]
-                area_norm = (estimated_area - min_area) / (max_area_final - min_area)
+                area_norm = (estimated_area - min_area_final) / (max_area_final - min_area_final)
 
 
                 """
@@ -81,17 +81,17 @@ class PotholeCategorizationStage:
                 # the negative and positive values of x. 
                 depth_norm = 2 * (1 / (1+math.exp(-depth)) - 0.5) # highest value of 1
 
-                total_score = depth_norm + area_norm
+                total_score = depth_norm * area_norm
                 print(f"Area Norm: {area_norm}, Depth Norm: {depth_norm}, Total Score: {total_score}")
 
             # Categorization of the potholes based on the normalized area and depth values
-            if 1.8 <= total_score < 2.0:
+            if 0.8 <= total_score < 1.0:
                 category = "Critical"
-            elif 1.2 <= total_score < 1.8:
+            elif 0.6 <= total_score < 0.8:
                 category = "High"
-            elif 0.6 <= total_score < 1.2:
+            elif 0.3 <= total_score < 0.6:
                 category = "Moderate"
-            elif 0.0 <= total_score < 0.6:
+            elif 0.0 <= total_score < 0.3:
                 category = "Low"
             else: # for potholes 'not on the road' => in that case total_score = -1
                 category = "NA"
