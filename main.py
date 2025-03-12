@@ -83,14 +83,14 @@ def main():
             pothole_areas = area_estimation_stage.process(img_path, filtered_detections)
             visualize_pothole_areas(image, filtered_detections, pothole_areas, save_path, image_name)
 
-            # Stage 5: Depth Estimation
-            depth_estimations = depth_estimation_stage.process(img_path, filtered_detections, pothole_areas, Config.DEPTH_ANYTHING_PERCENTILE_FILTER['percentile_filter'],
-                                Config.DEPTH_ANYTHING_PERCENTILE_FILTER['percentile_low_value'], Config.DEPTH_ANYTHING_PERCENTILE_FILTER['percentile_high_value'])
-            visualize_depth_results(depth_estimations, save_path, image_name)
+            # # Stage 5: Depth Estimation
+            # depth_estimations = depth_estimation_stage.process(img_path, filtered_detections, pothole_areas, Config.DEPTH_ANYTHING_PERCENTILE_FILTER['percentile_filter'],
+            #                     Config.DEPTH_ANYTHING_PERCENTILE_FILTER['percentile_low_value'], Config.DEPTH_ANYTHING_PERCENTILE_FILTER['percentile_high_value'])
+            # visualize_depth_results(depth_estimations, save_path, image_name)
             
-            # Stage 6: Pothole Categorization
-            pothole_categorizations = pothole_categorization_stage.process(img_path, filtered_detections, pothole_areas, depth_estimations['relative_depths_divided_area'])
-            visualize_area_depth_results(pothole_categorizations, filtered_detections, save_path, image_name)
+            # # Stage 6: Pothole Categorization
+            # pothole_categorizations = pothole_categorization_stage.process(img_path, filtered_detections, pothole_areas, depth_estimations['relative_depths_divided_area'])
+            # visualize_area_depth_results(pothole_categorizations, filtered_detections, save_path, image_name)
 
             process_time = time() - start_time
             print(f"Processing completed in {process_time:.2f} seconds (including saving the visualizations)")
@@ -108,14 +108,14 @@ def main():
                 'filtered_detections': filtered_detections,
                 'detections' : pothole_detections,
                 'pothole_areas': pothole_areas,
-                'depth_estimations': depth_estimations,
-                'pothole_categorizations': pothole_categorizations,
+                # 'depth_estimations': depth_estimations,
+                # 'pothole_categorizations': pothole_categorizations,
             }
 
             visualize_combined_results(pipeline_output, Config.OUTPUT_PATH)
 
             # save results in .txt file
-            create_results_file(filtered_detections, pothole_areas, depth_estimations, pothole_categorizations, Config.OUTPUT_PATH, img_path)
+            # create_results_file(filtered_detections, pothole_areas, depth_estimations, pothole_categorizations, Config.OUTPUT_PATH, img_path)
             print(f"Results saved to {Config.OUTPUT_PATH}")
             
         except Exception as e:

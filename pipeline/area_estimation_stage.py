@@ -32,7 +32,11 @@ class AreaEstimationStage:
                     b = -249.57544427170112
                     c = 0.6036184827412467
                     d = -0.00036558500089469364
-                    scaling_factor = a/(b + c*y_distance_middle_pothole + d*(y_distance_middle_pothole**2))
+                    if y_distance_middle_pothole >= 800:
+                        scaling_factor = a/(b + c*y_distance_middle_pothole + d*(y_distance_middle_pothole**2))
+                    else:
+                        scaling_factor = a/(b + c*800 + d*(800**2))
+
                 # elif self.resolution == (1280, 720):
                 
                 area = scaling_factor * bounding_box_area
