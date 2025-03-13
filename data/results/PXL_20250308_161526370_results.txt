@@ -1,0 +1,16 @@
+Results for data/images\PXL_20250308_161526370.jpg
+Total potholes detected: 1
+Potholes on road: 1
+Potholes not on road: 0
+
+Detailed results:
+Pothole #1: ON road
+    Bounding box: [70.32, 1610.68, 2614.82, 2106.11]
+    Detection Confidence: 0.83
+    % Pixels in box which are road: 0.35
+    Estimated Area: 0.4418
+    Normalized Area: 0.1424
+    Estimated Relative Depth: 0.5655
+    Normalized Depth: 0.5655
+    Categorization: Moderate
+    Categorization Score: 0.708

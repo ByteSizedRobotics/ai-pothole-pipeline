@@ -51,7 +51,7 @@ class AreaEstimationStage:
 
                 # elif self.resolution == (1280, 720):
                 
-                area = x_scaling_factor/2 * y_scaling_factor * bounding_box_area * 100000
+                area = x_scaling_factor * y_scaling_factor * bounding_box_area * 100000
                 pothole_areas.append(area)
             else:
                 pothole_areas.append(-1) # -1 means pothole is not on the road

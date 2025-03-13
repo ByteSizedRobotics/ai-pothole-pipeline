@@ -9,31 +9,31 @@ Pothole #1: ON road
     Detection Confidence: 0.84
     % Pixels in box which are road: 1.00
     Estimated Area: 0.3478
-    Normalized Area: 0.1357
-    Estimated Relative Depth: 0.5318
-    Normalized Depth: 0.2598
+    Normalized Area: 0.1032
+    Estimated Relative Depth: 0.3919
+    Normalized Depth: 0.3919
     Categorization: Low
-    Categorization Score: 0.3954
+    Categorization Score: 0.4952
 Pothole #2: ON road
     Bounding box: [0.0, 1586.6, 3095.29, 2451.13]
     Detection Confidence: 0.82
     % Pixels in box which are road: 0.79
     Estimated Area: 0.7027
-    Normalized Area: 0.2782
-    Estimated Relative Depth: 0.4948
-    Normalized Depth: 0.2425
-    Categorization: Low
-    Categorization Score: 0.5207
+    Normalized Area: 0.2511
+    Estimated Relative Depth: 0.3948
+    Normalized Depth: 0.3948
+    Categorization: Moderate
+    Categorization Score: 0.646
 Pothole #3: ON road
     Bounding box: [585.09, 1031.0, 2447.02, 1281.12]
     Detection Confidence: 0.80
     % Pixels in box which are road: 1.00
     Estimated Area: 1.5791
-    Normalized Area: 0.6302
-    Estimated Relative Depth: 0.3319
-    Normalized Depth: 0.1644
+    Normalized Area: 0.6163
+    Estimated Relative Depth: 0.1481
+    Normalized Depth: 0.1481
     Categorization: Moderate
-    Categorization Score: 0.7946
+    Categorization Score: 0.7644
 Pothole #4: NOT on road
     Bounding box: [0.0, 0.09, 1782.14, 579.62]
     Detection Confidence: 0.72
