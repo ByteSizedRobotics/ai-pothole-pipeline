@@ -33,11 +33,17 @@ class AreaEstimationStage:
                     b = -249.57544427170112
                     c = 0.6036184827412467
                     d = -0.00036558500089469364
-                    if y_distance_middle_pothole >= 800:
-                        y_scaling_factor = a/(b + c*y_distance_middle_pothole + d*(y_distance_middle_pothole**2))
-                    else: # if the pothole is above the 800 pixel mark, we use the scaling factor at 800 pixels (this is due to the properties of the curve => starts dropping down after 800 pixels)
-                        y_scaling_factor = a/(b + c*800 + d*(800**2))
+                    
+                    # Attempt 1 - using just y scaling factor
+                    y_scaling_factor = a/(b + c*y_distance_middle_pothole + d*(y_distance_middle_pothole**2))
 
+                    # Attempt 2 - using just y scaling factor but stopping drop-down in curve
+                    # if y_distance_middle_pothole >= 800:
+                    #     y_scaling_factor = a/(b + c*y_distance_middle_pothole + d*(y_distance_middle_pothole**2))
+                    # else: # if the pothole is above the 800 pixel mark, we use the scaling factor at 800 pixels (this is due to the properties of the curve => starts dropping down after 800 pixels)
+                    #     y_scaling_factor = a/(b + c*800 + d*(800**2))
+
+                    # Attempt 3 - using both x and y scaling factors
                     if x_distance_middle_pothole <= 1640:
                         x_scaling_factor = 4*(10**(-9))+6*(10**(-6))
                     elif x_distance_middle_pothole > 1640:
@@ -45,7 +51,7 @@ class AreaEstimationStage:
 
                 # elif self.resolution == (1280, 720):
                 
-                area = x_scaling_factor * y_scaling_factor * (bounding_box_area)**2 / 0.25
+                area = x_scaling_factor/2 * y_scaling_factor * bounding_box_area * 100000
                 pothole_areas.append(area)
             else:
                 pothole_areas.append(-1) # -1 means pothole is not on the road

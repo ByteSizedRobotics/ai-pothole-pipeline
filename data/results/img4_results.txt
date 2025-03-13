@@ -1,0 +1,26 @@
+Results for data/images\img4.jpg
+Total potholes detected: 2
+Potholes on road: 2
+Potholes not on road: 0
+
+Detailed results:
+Pothole #1: ON road
+    Bounding box: [668.69, 1236.76, 1841.02, 1716.63]
+    Detection Confidence: 0.87
+    % Pixels in box which are road: 0.25
+    Estimated Area: 0.4952
+    Normalized Area: 0.1949
+    Estimated Relative Depth: 0.5668
+    Normalized Depth: 0.276
+    Categorization: Low
+    Categorization Score: 0.4709
+Pothole #2: ON road
+    Bounding box: [1741.62, 915.77, 2099.97, 1013.7]
+    Detection Confidence: 0.87
+    % Pixels in box which are road: 1.00
+    Estimated Area: 2.1324
+    Normalized Area: 0.8524
+    Estimated Relative Depth: 0.2331
+    Normalized Depth: 0.116
+    Categorization: Moderate
+    Categorization Score: 0.9684
