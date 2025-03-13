@@ -1,6 +1,0 @@
-Results for data/images\img2.jpg
-Total potholes detected: 0
-Potholes on road: 0
-Potholes not on road: 0
-
-Detailed results:
