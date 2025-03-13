@@ -57,7 +57,7 @@ class PotholeCategorizationStage:
                 # max_area_y_distance_middle_pothole = max_height/2 # y distance in pixels to middle of bounding box
 
                 # scaling_factor = a/(b + c*max_area_y_distance_middle_pothole + d*(max_area_y_distance_middle_pothole**2))
-                max_area_final = 2.5
+                max_area_final = 2.0
 
                 ##### calculate the MIN area taking into account the scaling factor
                 # min_width = min_area_bot_right_coord[0] - min_area_top_left_coord[0] # using the min_area coordinates
@@ -69,7 +69,10 @@ class PotholeCategorizationStage:
                 min_area_final = 0.1
 
                 ##### calculate the normalized area => [0, 1]
-                area_norm = (estimated_area - min_area_final) / (max_area_final - min_area_final)
+                if (estimated_area >= max_area_final):
+                    area_norm = 1.0
+                else:
+                    area_norm = (estimated_area - min_area_final) / (max_area_final - min_area_final)
 
                 """
                 DEPTH VALUE NORMALIZATION
