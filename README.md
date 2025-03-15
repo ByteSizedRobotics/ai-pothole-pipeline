@@ -1,68 +1,105 @@
-# ai-pothole-models
-## Local Classification Model
-#### 1) Deploy flask local_app.py on local web server without Docker 
-(need to install dependencies 1st.. see Setup Virtual Env Steps)
-Works for windows + linux
-- cd to deployment\local-app
-- python local_app.py
-- go to the specified web address (ex: http://127.0.0.1:5000/)
+<h1 align="center">
+AI-Pothole-Detection-Pipeline
+</h1>
 
-#### 2) Running python script locally (not on web server but just as python script)
-- cd to deployment\testing
-- python local-model-testing.py
+## Overview
+The AI Pothole Detection Pipeline is an end-to-end pipeline designed to detect potholes and perform pothole analysis on a given image. This AI project is part of the Autonomous Pothole Detection Rover, designed to autonoumously navigate along sidewalks while performing real-time pothole detection and further processing of the potholes on the server-side. Once an image is provided, it passes through 6 pipeline stages for comprehensive pothole analysis.
 
-## Docker Classification Model
-Only the live inference with video is done in the container due to permission/access complexities for providing access to host files/folder within the container. For now, a bind mount is used as the location to share access between the host and the container for the detected/saved images. NOTE: you need to login to Docker 1st (i.e Docker login)
-#### 1) Building and Pushing Docker Container (Docker desktop might need to be running)
-- cd to pothole-detection/deployment/raspi
-- docker buildx build --platform linux/arm64 -t [dockerUSERNAME]/pothole-classifier-app-arm64 .
-- docker push [dockerUSERNAME]/pothole-classifier-app-arm64:latest
+1. **Pothole Detection**: Identifies potential potholes in images using YOLOv5
+2. **Road Segmentation**: Creates a road mask using DeepLabV3+ segmentation model
+3. **Pothole Filtering**: Filters pothole detections based on road segmentation
+4. **Area Estimation**: Calculates a rough score estimation for the surface area of detected potholes
+5. **Depth Estimation**: Estimates pothole depth using DepthAnythingV2
+6. **Pothole Categorization**: Classifies potholes based on area and depth metrics
 
-#### 2) Deploy app.py on Docker Container on Raspberry Pi 
-- docker pull --platform linux/arm64 [dockerUSERNAME]/pothole-classifier-app-arm64:latest
-- docker run -d --name flask-pothole --device=/dev/video0 -p 5000:5000 -v [PATH ON HOST TO SAVE IMAGES]:/app/saved_images [dockerUSERNAME]/pothole-classifier-app-arm64
+![image](https://github.com/user-attachments/assets/b8fb04f0-22ae-447a-be93-f2df64a94c5d)
 
-### Important NOTES for Raspberry Pi: 
-When running the app on the raspberry pi, it might take several attempts for video camera to startup
-Gives the error [ WARN:0@56.032] global cap_v4l.cpp:1048 tryIoctl VIDEOIO(V4L2:/dev/video0): select() timeout.
-JUST KEEP TRYING... (keep clicking 'start live inference' after it fails)
-Tried playing with parameters based on this, didn't seem to help
-https://forums.raspberrypi.com/viewtopic.php?t=35689
+## Project Structure
+```
+project_root/
+├── main.py                     # Main script to run the complete pipeline
+├── config.py                   # Configuration parameters
+├── modules/
+│   ├── ai_models/
+│   │   ├── DeepLabV3Plus/      # DeepLavV3+ model for road segmentation
+│   │   │   └── checkpoints/
+│   │   ├── DepthAnythingV2/    # DepthAnythingV2 model for depth estimation
+│   │   │   └── checkpoints/
+│   │   └── pothole-detection/  # YOLOv5 model and training runs completed for fine-tuning
+│   │   │   └── yolov5/
+│   ├── area_estimation/        # Calculations for area scaling factor
+│   ├── road_segmentation.py    # Road segmentation using DeepLabV3+
+│   ├── pothole_detection.py    # Pothole detection using YOLOv5
+│   └── depth_estimation.py     # Depth estimation using DepthAnythingV2
+├── pipeline/
+│   ├── pothole_detection_stage.py      # Stage 1: Detect potholes
+│   ├── road_segmentation_stage.py      # Stage 2: Road segmentation
+│   ├── pothole_filtering_stage.py      # Stage 3: Filter potholes based on segmentation
+│   ├── area_estimation_stage.py        # Stage 4: Estimate area of potholes
+│   ├── depth_estimation_stage.py       # Stage 5: Estimate depth of potholes
+│   └── pothole_categorization_stage.py # Stage 6: Categorize potholes based on depth and area
+└── utils_lib/
+    ├── DeepLabV3Plus/          # Contains the DeepLabV3+ required libraries for visualizations
+    │   ├── io_utils.py
+    │   └── visualization.py
+    ├── visualization.py        # To save the visualizations/results of the pipeline
+    └── io_utils.py             # Used to get images from a directory or a single file
+```
 
-need to connect the usb webcam to the 3.0 usbc port and also works with the ___ Ubuntu account
+## Instructions
+### Configuration Details
+The system uses a `Config` class (in `config.py`) with the following key parameters:
+- **INPUT_PATH**: `"data/images"` - Directory containing input images
+- **OUTPUT_PATH**: `"data/results"` - Directory for output results
+- **IMAGE_RESOLUTION**: `(3280, 2464)` - Default image resolution (as of right now, only image resolution supported is 3280x2464)
+- **DEPTH_ANYTHING_ENCODER**: `'vitl'` - Vision Transformer encoder size (options: 'vits', 'vitb', 'vitl')
+- **MIN_PIXELS_ROAD_THRESHOLD**: `0.60` - Minimum percentage of pixels in bounding box required to be classified as road for pothole filtering/validation
 
-## Setup Virtual Env and install dependencies
-#### WINDOWS
-1) python -m venv venv
-2) Set-ExecutionPolicy Unrestricted -Scope Process
-3) .\venv\Scripts\Activate
-4) cd pothole-detection\deployment\local-app
-5) pip install -r requirements.txt
+### Prerequisites
+Before running the pipeline, ensure you have:
 
-#### LINUX
-1) python3 -m venv venv
-2) . venv/bin/activate
-3) cd pothole-detection\deployment\local-app
-4) pip install -r requirements.txt
+1. Python 3.8+ installed
+2. Cloned the GitHub repository locally
+3. Installed required packages provided in `requirements.txt` (can create a venv and install the packages)
+4. Downloaded and extracted the DeepLabV3+ Cityscapes ResNet101 weights from the DeepLabV3+ [repository](https://github.com/VainF/DeepLabV3Plus-Pytorch/) (Download [HERE](https://drive.google.com/file/d/1t7TC8mxQaFECt4jutdq_NMnWxdm6B-Nb/view). Save the weights file under `modules/ai_models/DeepLabV3Plus/checkpoints` (you might have to create the folder `checkpoints`).
+5. Downloaded the desired Depth-Anything-V2 weight file (recommended model is LARGE, but BASE and SMALL are also options). (Download [HERE](https://drive.google.com/file/d/1t7TC8mxQaFECt4jutdq_NMnWxdm6B-Nb/view)). Save the weights file under `modules/ai_models/Depth-Anything-V2/checkpoints` (you might have to create the folder `checkpoints`).
 
-NOTE: can deactivate whenever with: deactive
+### Running Application
+The **IMAGE_RESOLUTION** should be the same as specified in the `config.py`. You can resize the images using the `resolution_converter.py` file under `data/images`. The resolution can be specified at runtime by using the command line arguments. The 
+```bash
+# Process a single image
+python main.py --input data/images/road_image.jpg
 
-## Camera IMX-219 setup with Raspi 5
-### Installing libcamera
-Tried the following based on https://forums.raspberrypi.com/viewtopic.php?t=339606, still not working
+# Process all images in a directory and custom image resolution
+python main.py --input data/images/batch1/ --resolution 1280x720
 
-git clone https://git.libcamera.org/libcamera/libcamera.git
-git clone https://github.com/raspberrypi/libcamera-apps.git
+# Specify a custom output location
+python main.py --input data/images/road_image.jpg --output results/analysis/
+```
 
-cd libcamera
-meson setup build
-ninja -C build
-sudo ninja -C build install
+### Pothole Detection Deployment
+Since this project is integrated with an Autonomous Pothole Detection Rover, the pothole detection model is deployed and runs on a Raspberry Pi. There are files under `modules/ai_models/pothole_detection/deployment` which are related to deploying the pothole detection model on hardware components. 
 
-cd ../../libcamera-apps
-meson setup build
-ninja -C build
-sudo ninja -C build install
+## Disclaimer
+This project is for non-commercial use only. It utilizes the YOLOv5, DeepLabV3+, and Depth-Anything-V2 models.
 
-### Using camera
-https://www.waveshare.com/wiki/Pi5-IMX219
+The source code and all credit for these models belong to their respective authors and organizations. As a result, this project is also subject to the licenses governing these models:
+
+**YOLOv5**
+- Author: Glenn Jocher (Ultralytics)
+- Purpose in Project: small model was fine tuned and trained to detect potholes
+- [Repository](https://github.com/ultralytics/yolov5)
+- [AGPL-3.0 License](modules/ai_models/pothole-detection/yolov5/LICENSE)
+
+
+**DeepLabV3+**
+- Purpose in Project: model used for segmentation with Cityscapes classes and weights file (can be downloaded from the repository linked below)
+- [Repository](https://github.com/VainF/DeepLabV3Plus-Pytorch/)
+- [MIT License](modules/ai_models/DeepLabV3Plus/LICENSE)
+
+**Depth-Anything-V2**
+- Authors: Yang, Lihe; Kang, Bingyi; Huang, Zilong; Zhao, Zhen; Xu, Xiaogang; Feng, Jiashi; Zhao, Hengshuang
+- Purpose in Project: model used for pothole depth estimation with the Depth-Anything-V2-Large model 
+- [Repository](https://github.com/DepthAnything/Depth-Anything-V2/)
+- Small model: [Apache-2.0 License](modules/ai_models/DepthAnythingV2/LICENSE)
+- Base, Large, Giant models: CC-BY-NC-4.0 License (non-commercial use only).
