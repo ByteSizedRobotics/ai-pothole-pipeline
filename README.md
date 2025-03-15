@@ -65,7 +65,7 @@ Before running the pipeline, ensure you have:
 5. Downloaded the desired Depth-Anything-V2 weight file (recommended model is LARGE, but BASE and SMALL are also options). (Download [HERE](https://drive.google.com/file/d/1t7TC8mxQaFECt4jutdq_NMnWxdm6B-Nb/view)). Save the weights file under `modules/ai_models/Depth-Anything-V2/checkpoints` (you might have to create the folder `checkpoints`).
 
 ### Running Application
-The **IMAGE_RESOLUTION** should be the same as specified in the `config.py`. You can resize the images using the `resolution_converter.py` file under `data/images`. The resolution can be specified at runtime by using the command line arguments. The 
+The **IMAGE_RESOLUTION** should be the same as specified in the `config.py`. You can resize the images using the `resolution_converter.py` file under `data/images`. The resolution can be specified at runtime by using the command line arguments. 
 ```bash
 # Process a single image
 python main.py --input data/images/road_image.jpg
@@ -76,6 +76,21 @@ python main.py --input data/images/batch1/ --resolution 1280x720
 # Specify a custom output location
 python main.py --input data/images/road_image.jpg --output results/analysis/
 ```
+
+### Output Files
+The following files will be saved after running the pipeline for a given image. The images are the output results from each pipeline stage. The `combined.png` provides an overview of the pipeline processing for that image and the `results.txt` provides a summary of the results.
+- [imageName]_0_original_image.png
+- [imageName]_1_original_detections.png
+- [imageName]_2_full_segmentation.png
+- [imageName]_3_road_segmentation.png
+- [imageName]_4_filtered_detections.png
+- [imageName]_5_pothole_area_scores.png
+- [imageName]_6_depth_scores.png
+- [imageName]_7_pothole_categories.png
+- [imageName]_combined.png
+- [imageName]_results.txt
+
+
 
 ### Pothole Detection Deployment
 Since this project is integrated with an Autonomous Pothole Detection Rover, the pothole detection model is deployed and runs on a Raspberry Pi. There are files under `modules/ai_models/pothole_detection/deployment` which are related to deploying the pothole detection model on hardware components. 
