@@ -54,7 +54,7 @@ class Config:
     }
     DEPTH_ANYTHING_PERCENTILE_FILTER = {
         'percentile_filter' : True,
-        'percentile_low_value' : 5,
+        'percentile_low_value' : 50,
         'percentile_high_value' : 95
     }
     

@@ -90,7 +90,7 @@ plt.scatter(x_data, y_data, color='blue', label='Original Data', zorder=5, s=80)
 colors = ['red', 'green', 'purple', 'orange', 'brown', 'pink']
 for i, result in enumerate(results[:3]):
     plt.plot(result['x_extended'], result['y_pred'], 
-             label=f"{result['name']} (R² = {result['r2']:.4f})", 
+             label=f"{result['name']}", 
              color=colors[i], linewidth=2)
 
 # Set log scale for y-axis for better visualization

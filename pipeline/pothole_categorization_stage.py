@@ -27,27 +27,35 @@ class PotholeCategorizationStage:
                 """
                 AREA VALUE NORMALIZATION
                 """
+                max_area_final = 2.0
+                min_area_final = 0.1
+
+                ##### calculate the normalized area => [0, 1]
+                if (estimated_area >= max_area_final): # in cases that the area score is greater than 2.0 than just assign the normalized value to 1.0
+                    area_norm = 1.0
+                else:
+                    area_norm = (estimated_area - min_area_final) / (max_area_final - min_area_final)
                 # Normalization of the area values using normalization expression (max value of 1.0)
-                # TODO: NATHAN update this to have the different supported resolutions we are planning to use
-                if self.resolution == (3280, 2464):
-                    img_width = 3280
-                    img_height = 2464
-                    a = -0.00022788150560381466
-                    b = -249.57544427170112
-                    c = 0.6036184827412467
-                    d = -0.00036558500089469364
+                # Not needed anymore
+                # if self.resolution == (3280, 2464):
+                #     img_width = 3280
+                #     img_height = 2464
+                #     a = -0.00022788150560381466
+                #     b = -249.57544427170112
+                #     c = 0.6036184827412467
+                #     d = -0.00036558500089469364
 
-                    # these values are estimated as the smallest bounding box which can be detected
-                    min_area_top_left_coord = (1638, 818)
-                    min_area_bot_right_coord = (1650, 828)
+                #     # these values are estimated as the smallest bounding box which can be detected
+                #     min_area_top_left_coord = (1638, 818)
+                #     min_area_bot_right_coord = (1650, 828)
 
-                elif self.resolution == (1280, 720):
-                    img_width = 1280
-                    img_height = 720
+                # elif self.resolution == (1280, 720):
+                #     img_width = 1280
+                #     img_height = 720
 
-                    # these values are estimated as the smallest bounding box which can be detected
-                    min_area_top_left_coord = (602, 261)
-                    min_area_bot_right_coord = (678, 266)
+                #     # these values are estimated as the smallest bounding box which can be detected
+                #     min_area_top_left_coord = (602, 261)
+                #     min_area_bot_right_coord = (678, 266)
                 
 
                 ##### calculate the MAX area taking into account the scaling factor
@@ -57,7 +65,6 @@ class PotholeCategorizationStage:
                 # max_area_y_distance_middle_pothole = max_height/2 # y distance in pixels to middle of bounding box
 
                 # scaling_factor = a/(b + c*max_area_y_distance_middle_pothole + d*(max_area_y_distance_middle_pothole**2))
-                max_area_final = 2.0
 
                 ##### calculate the MIN area taking into account the scaling factor
                 # min_width = min_area_bot_right_coord[0] - min_area_top_left_coord[0] # using the min_area coordinates
@@ -66,13 +73,7 @@ class PotholeCategorizationStage:
                 # min_area_y_distance_middle_pothole = (min_area_top_left_coord[1] + min_area_bot_right_coord[1]) / 2
 
                 # scaling_factor = a/(b + c*min_area_y_distance_middle_pothole + d*(min_area_y_distance_middle_pothole**2))
-                min_area_final = 0.1
 
-                ##### calculate the normalized area => [0, 1]
-                if (estimated_area >= max_area_final):
-                    area_norm = 1.0
-                else:
-                    area_norm = (estimated_area - min_area_final) / (max_area_final - min_area_final)
 
                 """
                 DEPTH VALUE NORMALIZATION
@@ -93,7 +94,7 @@ class PotholeCategorizationStage:
                 category = "High"
             elif 0.6 <= total_score < 1.0:
                 category = "Moderate"
-            elif 0.0 <= total_score < 0.6:
+            elif 0.0 <= total_score < 0.5:
                 category = "Low"
             else: # for potholes 'not on the road' => in that case total_score = -1
                 category = "NA"

@@ -45,9 +45,9 @@ class AreaEstimationStage:
 
                     # Attempt 3 - using both x and y scaling factors
                     if x_distance_middle_pothole <= 1640:
-                        x_scaling_factor = 4*(10**(-9))+6*(10**(-6))
+                        x_scaling_factor = 4*(10**(-9))*x_distance_middle_pothole+6*(10**(-6))
                     elif x_distance_middle_pothole > 1640:
-                        x_scaling_factor = -4*(10**(-9))+2*(10**(-5))
+                        x_scaling_factor = -4*(10**(-9))*x_distance_middle_pothole+2*(10**(-5))
 
                 # elif self.resolution == (1280, 720):
                 

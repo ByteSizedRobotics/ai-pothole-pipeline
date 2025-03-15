@@ -48,7 +48,7 @@ class DepthEstimationStage:
         cropped_potholes = [] # stores the cropped potholes
         depth_maps = [] # stores the depth maps of the potholes
         relative_depths = [] # stores the relative depths of the potholes (max depth - min depth)
-        relative_depths_divided_area = [] # stores the normalized depths of the potholes
+        normalized_depths = [] # stores the normalized depths of the potholes
 
         for i, (_, bbox, is_on_road, _) in enumerate(filtered_detections):
             if is_on_road:
@@ -81,9 +81,9 @@ class DepthEstimationStage:
                 # Normalize the depth by dividing the relative depth by the square root of the area
                 # Or else bigger potholes will have higher depth values than smaller potholes 
                 # regardless of the actual depth of the pothole.
-                relative_depth_divided_area = (relative_depth / np.sqrt(pothole_areas[i])) / 1000
+                normalized_depth = (relative_depth / np.sqrt(pothole_areas[i])) / 1000
                 # math.sqrtrroot(pothole_areas[i])
-                relative_depths_divided_area.append(relative_depth_divided_area)
+                normalized_depths.append(normalized_depth)
 
                 # print('Relative Depth:', relative_depth)
                 # print('Normalized Depth:', normalized_depth)
@@ -94,11 +94,11 @@ class DepthEstimationStage:
                 cropped_potholes.append(None)
                 depth_maps.append(None)
                 relative_depths.append(-1) # -1 means pothole is not on the road
-                relative_depths_divided_area.append(-1)
+                normalized_depths.append(-1)
 
         return {
             'cropped_potholes': cropped_potholes,
             'depth_maps': depth_maps,
             'relative_depths': relative_depths,
-            'relative_depths_divided_area': relative_depths_divided_area
+            'normalized_depths': normalized_depths
         }

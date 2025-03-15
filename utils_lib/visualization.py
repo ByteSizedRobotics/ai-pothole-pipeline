@@ -68,22 +68,47 @@ def visualize_pothole_detections(image, detections, save_path, image_name):
     plt.close(fig)
     return fig, ax
 
-# Function to visualize the full segmentation
+# Function to visualize the full segmentation with legend
 def visualize_full_segmentation(full_segmentation, save_path, image_name):
     decode_fn = Cityscapes.decode_target
     colorized_preds = decode_fn(full_segmentation).astype('uint8')
     colorized_preds = Image.fromarray(colorized_preds)
     
-    fig, ax = plt.subplots(figsize=(10, 6))
+    fig, ax = plt.subplots(figsize=(12, 8))  # Increased figure size to accommodate legend
     ax.imshow(colorized_preds)
     ax.set_title('Full Segmentation')
     ax.axis('off')
+    
+    legend_patches = []
+    legend_labels = []
+    
+    unique_classes = np.unique(full_segmentation)
+    
+    for class_id in unique_classes:
+        if class_id in cityscapes_classes:
+            class_name, class_color = cityscapes_classes[class_id]
+            # Convert RGB color to 0-1 range for matplotlib
+            normalized_color = tuple(np.array(class_color) / 255.0)
+            patch = plt.Rectangle((0, 0), 1, 1, fc=normalized_color, edgecolor='k')
+            legend_patches.append(patch)
+            legend_labels.append(class_name)
+    
+    # Add legend to the plot
+    if legend_patches:
+        ax.legend(
+            legend_patches, 
+            legend_labels, 
+            loc='lower right', 
+            bbox_to_anchor=(1.1, 0), 
+            fontsize='small', 
+            framealpha=0.8
+        )
     
     plt.savefig(os.path.join(save_path, f'{image_name}_2_full_segmentation.png'), dpi=300, bbox_inches='tight')
     plt.close(fig)
     return fig, ax, colorized_preds
 
-# Function to visualize road segmentation
+# Function to visualize road segmentation with legend
 def visualize_road_segmentation(road_mask, save_path, image_name):
     road_vis = np.zeros((road_mask.shape[0], road_mask.shape[1], 3), dtype=np.uint8)
     road_color = np.array(cityscapes_classes[1][1], dtype=np.uint8)  # Road color
@@ -93,6 +118,9 @@ def visualize_road_segmentation(road_mask, save_path, image_name):
     ax.imshow(road_vis)
     ax.set_title('Road Segmentation')
     ax.axis('off')
+    
+    legend_patch = plt.Rectangle((0, 0), 1, 1, fc=tuple(road_color/255), edgecolor='k') # add legend
+    ax.legend([legend_patch], ['Road'], loc='lower right')
     
     plt.savefig(os.path.join(save_path, f'{image_name}_3_road_segmentation.png'), dpi=300, bbox_inches='tight')
     plt.close(fig)
@@ -142,7 +170,7 @@ def visualize_pothole_areas(image, filtered_detections, pothole_areas, save_path
     fig, ax = plt.subplots(figsize=(12, 8))
     
     ax.imshow(image)
-    ax.set_title('Potholes with Area Measurements', fontsize=14)
+    ax.set_title('Potholes with Area Estimations', fontsize=14)
     ax.axis('off')
     
     # Draw bounding boxes and add area labels
@@ -180,7 +208,7 @@ def visualize_depth_results(depth_results, save_path, image_name):
     cropped_potholes = depth_results.get('cropped_potholes', [])
     depth_maps = depth_results.get('depth_maps', [])
     relative_depths = depth_results.get('relative_depths', [])
-    relative_depths_divided_area = depth_results.get('relative_depths_divided_area', [])
+    normalized_depths = depth_results.get('normalized_depths', [])
 
     valid_indices = [i for i, crop in enumerate(cropped_potholes) if crop is not None] # Filter out None values (potholes not on road)
     potholes_on_road = len(valid_indices)
@@ -197,7 +225,7 @@ def visualize_depth_results(depth_results, save_path, image_name):
         if potholes_on_road == 1:
             axes = np.array([axes])  # Make it 2D
             
-        fig.suptitle('Pothole Crops and Depth Maps', fontsize=12)
+        fig.suptitle('Cropped Potholes and Depth Maps', fontsize=12)
         
         # Plot each pothole and its depth map
         for idx, i in enumerate(valid_indices):
@@ -205,8 +233,8 @@ def visualize_depth_results(depth_results, save_path, image_name):
             
             if i < len(relative_depths):
                 relative_depth = relative_depths[i]
-                relative_depth_divided_area = relative_depths_divided_area[i]
-                axes[idx, 0].set_title(f"Pothole #{i+1}\nDepth: {relative_depth:.2f} (Divided by area: {relative_depth_divided_area:.2f})")
+                normalized_depth = normalized_depths[i]
+                axes[idx, 0].set_title(f"Pothole #{i+1}\nDepth: {relative_depth:.2f} (Normalized: {normalized_depth:.2f})")
             else:
                 axes[idx, 0].set_title(f"Pothole #{i+1}")
             
@@ -399,7 +427,7 @@ def visualize_combined_results(pipeline_output, save_path):
     cropped_potholes = depth_estimations.get('cropped_potholes', [])
     depth_maps = depth_estimations.get('depth_maps', [])
     relative_depths = depth_estimations.get('relative_depths', [])
-    relative_depths_divided_area = depth_estimations.get('relative_depths_divided_area', [])
+    relative_depths_divided_area = depth_estimations.get('normalized_depths', [])
 
     valid_indices = [i for i, crop in enumerate(cropped_potholes) if crop is not None]
     potholes_on_road = len(valid_indices)
@@ -432,7 +460,7 @@ def visualize_combined_results(pipeline_output, save_path):
                 pothole_ax.text(0.5, 0.5, "No depth", ha='center', va='center', fontsize=8)
             
             if i < len(relative_depths):
-                pothole_ax.set_title(f"#{i+1}: Depth Value: {relative_depths_divided_area[i]:.2f}", fontsize=8)
+                pothole_ax.set_title(f"#{i+1}: Depth Score: {relative_depths_divided_area[i]:.2f}", fontsize=8)
             else:
                 pothole_ax.set_title(f"#{i+1}", fontsize=8)
             

@@ -1,4 +1,4 @@
-Results for data/images/PXL_20250304_182611587.jpg
+Results for .\data\images\PXL_20250304_182611587.jpg
 Total potholes detected: 2
 Potholes on road: 2
 Potholes not on road: 0
@@ -8,19 +8,19 @@ Pothole #1: ON road
     Bounding box: [1571.45, 1596.25, 3932.07, 2241.69]
     Detection Confidence: 0.95
     % Pixels in box which are road: 0.87
-    Estimated Area: 1.5869
-    Normalized Area: 0.7826
-    Estimated Relative Depth: 374.1234130859375
-    Normalized Depth: 0.297
-    Categorization: High
-    Categorization Score: 1.0796
+    Estimated Area: 0.7137
+    Normalized Area: 0.323
+    Estimated Relative Depth: 227.25660705566406
+    Normalized Depth: 0.269
+    Categorization: NA
+    Categorization Score: 0.592
 Pothole #2: ON road
     Bounding box: [71.15, 1337.36, 1280.09, 1850.16]
     Detection Confidence: 0.90
     % Pixels in box which are road: 0.77
-    Estimated Area: 0.3924
-    Normalized Area: 0.1539
-    Estimated Relative Depth: 417.2406005859375
-    Normalized Depth: 0.6661
-    Categorization: Moderate
-    Categorization Score: 0.82
+    Estimated Area: 0.5688
+    Normalized Area: 0.2467
+    Estimated Relative Depth: 219.3563995361328
+    Normalized Depth: 0.2909
+    Categorization: NA
+    Categorization Score: 0.5376
