@@ -1,3 +1,27 @@
+# License
+This project is for non-commercial use only. It utilizes the YOLOv5, DeepLabV3+, and Depth-Anything-V2 models.
+
+The source code and all credit for these models belong to their respective authors and organizations. As a result, this project is also subject to the licenses governing these models:
+
+**YOLOv5**
+- Author: Glenn Jocher (Ultralytics)
+- Purpose in Project: small model was fine tuned and trained to detect potholes
+- [Repository](https://github.com/ultralytics/yolov5)
+- [AGPL-3.0 License](modules/ai_models/pothole-detection/yolov5/LICENSE)
+
+
+**DeepLabV3+**
+- Purpose in Project: model used for segmentation with Cityscapes classes and weights file (can be downloaded from the repository linked below)
+- [Repository](https://github.com/VainF/DeepLabV3Plus-Pytorch/)
+- [MIT License](modules/ai_models/DeepLabV3Plus/LICENSE)
+
+**Depth-Anything-V2**
+- Authors: Yang, Lihe; Kang, Bingyi; Huang, Zilong; Zhao, Zhen; Xu, Xiaogang; Feng, Jiashi; Zhao, Hengshuang
+- Purpose in Project: model used for pothole depth estimation with the Depth-Anything-V2-Large model 
+- [Repository](https://github.com/DepthAnything/Depth-Anything-V2/)
+- Small model: [Apache-2.0 License](modules/ai_models/DepthAnythingV2/LICENSE)
+- Base, Large, Giant models: CC-BY-NC-4.0 License (non-commercial use only).
+
 # ai-pothole-models
 ## Local Classification Model
 #### 1) Deploy flask local_app.py on local web server without Docker 
