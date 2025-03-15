@@ -8,7 +8,7 @@ The AI Pothole Detection Pipeline is an end-to-end pipeline designed to detect p
 1. **Pothole Detection**: Identifies potential potholes in images using YOLOv5
 2. **Road Segmentation**: Creates a road mask using DeepLabV3+ segmentation model
 3. **Pothole Filtering**: Filters pothole detections based on road segmentation
-4. **Area Estimation**: Calculates the surface area of detected potholes
+4. **Area Estimation**: Calculates a rough score estimation for the surface area of detected potholes
 5. **Depth Estimation**: Estimates pothole depth using DepthAnythingV2
 6. **Pothole Categorization**: Classifies potholes based on area and depth metrics
 
