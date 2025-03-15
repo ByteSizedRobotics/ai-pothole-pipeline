@@ -528,7 +528,7 @@ def create_results_file(filtered_detections, pothole_areas, depth_estimations, p
                 f.write(f"    Estimated Area: NA\n")
 
             if is_on_road:
-                f.write(f"    Estimated Relative Depth: {round(depth_estimations['relative_depths_divided_area'][i], 4)}\n")
+                f.write(f"    Estimated Relative Depth: {round(depth_estimations['relative_depths'][i], 4)}\n")
                 f.write(f"    Normalized Depth: {round(pothole_categorizations['normalized_depths'][i], 4)}\n")
             else:
                 f.write(f"    Estimated Relative Depth: NA\n")

@@ -1,0 +1,35 @@
+# Core dependencies
+numpy=>2.1.1
+opencv-python=>4.11.0.86
+torch=>2.6.0
+torchvision=>0.21.0
+pillow=>11.1.0
+matplotlib=>3.10.1
+pandas=>2.2.3
+scikit-learn=>1.6.1
+tqdm=>4.67.1
+PyYAML=>6.0.2
+
+# YOLOv5 and related dependencies
+ultralytics=>8.3.82
+psutil=>7.0.0
+gitpython=>3.1.44
+
+# DeepLabV3+ specific dependencies
+networkx=>3.4.2
+
+# Depth Anything specific dependencies
+typing_extensions=>4.12.2
+pydantic=>2.10.6
+
+# Data augmentation
+albumentations=>2.0.5
+
+# API and visualization
+Flask=>3.1.0
+visdom=>0.2.4
+seaborn=>0.13.2
+
+# Utilities
+requests=>2.32.3
+scipy=>1.15.2

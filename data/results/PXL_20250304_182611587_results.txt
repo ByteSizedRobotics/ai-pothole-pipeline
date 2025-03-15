@@ -10,7 +10,7 @@ Pothole #1: ON road
     % Pixels in box which are road: 0.87
     Estimated Area: 1.5869
     Normalized Area: 0.7826
-    Estimated Relative Depth: 0.297
+    Estimated Relative Depth: 374.1234130859375
     Normalized Depth: 0.297
     Categorization: High
     Categorization Score: 1.0796
@@ -20,7 +20,7 @@ Pothole #2: ON road
     % Pixels in box which are road: 0.77
     Estimated Area: 0.3924
     Normalized Area: 0.1539
-    Estimated Relative Depth: 0.6661
+    Estimated Relative Depth: 417.2406005859375
     Normalized Depth: 0.6661
     Categorization: Moderate
     Categorization Score: 0.82
