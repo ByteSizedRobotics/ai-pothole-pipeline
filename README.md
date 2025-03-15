@@ -62,7 +62,7 @@ Before running the pipeline, ensure you have:
 2. Cloned the GitHub repository locally
 3. Installed required packages provided in `requirements.txt` (can create a venv and install the packages)
 4. Downloaded and extracted the DeepLabV3+ Cityscapes ResNet101 weights from the DeepLabV3+ [repository](https://github.com/VainF/DeepLabV3Plus-Pytorch/) (Download [HERE](https://drive.google.com/file/d/1t7TC8mxQaFECt4jutdq_NMnWxdm6B-Nb/view). Save the weights file under `modules/ai_models/DeepLabV3Plus/checkpoints` (you might have to create the folder `checkpoints`).
-5. Downloaded the desired Depth-Anything-V2 weight file (recommended model is LARGE, but BASE and SMALL are also options). (Download [HERE](https://drive.google.com/file/d/1t7TC8mxQaFECt4jutdq_NMnWxdm6B-Nb/view). Save the weights file under `modules/ai_models/Depth-Anything-V2/checkpoints` (you might have to create the folder `checkpoints`).
+5. Downloaded the desired Depth-Anything-V2 weight file (recommended model is LARGE, but BASE and SMALL are also options). (Download [HERE](https://drive.google.com/file/d/1t7TC8mxQaFECt4jutdq_NMnWxdm6B-Nb/view)). Save the weights file under `modules/ai_models/Depth-Anything-V2/checkpoints` (you might have to create the folder `checkpoints`).
 
 ### Running Application
 The **IMAGE_RESOLUTION** should be the same as specified in the `config.py`. You can resize the images using the `resolution_converter.py` file under `data/images`. The resolution can be specified at runtime by using the command line arguments. The 
