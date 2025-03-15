@@ -55,7 +55,7 @@ The system uses a `Config` class (in `config.py`) with the following key paramet
 - **DEPTH_ANYTHING_ENCODER**: `'vitl'` - Vision Transformer encoder size (options: 'vits', 'vitb', 'vitl')
 - **MIN_PIXELS_ROAD_THRESHOLD**: `0.60` - Minimum percentage of pixels in bounding box required to be classified as road for pothole filtering/validation
 
-### Prequisites
+### Prerequisites
 Before running the pipeline, ensure you have:
 
 1. Python 3.8+ installed
@@ -103,4 +103,3 @@ The source code and all credit for these models belong to their respective autho
 - [Repository](https://github.com/DepthAnything/Depth-Anything-V2/)
 - Small model: [Apache-2.0 License](modules/ai_models/DepthAnythingV2/LICENSE)
 - Base, Large, Giant models: CC-BY-NC-4.0 License (non-commercial use only).
-
