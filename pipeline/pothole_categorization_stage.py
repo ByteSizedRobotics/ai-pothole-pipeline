@@ -94,7 +94,7 @@ class PotholeCategorizationStage:
                 category = "High"
             elif 0.6 <= total_score < 1.0:
                 category = "Moderate"
-            elif 0.0 <= total_score < 0.5:
+            elif 0.0 <= total_score < 0.6:
                 category = "Low"
             else: # for potholes 'not on the road' => in that case total_score = -1
                 category = "NA"

@@ -197,7 +197,7 @@ def visualize_pothole_areas(image, filtered_detections, pothole_areas, save_path
     
     plt.tight_layout(rect=[0, 0.03, 1, 0.97])  # Make room for the bottom text
     
-    area_viz_save_path = os.path.join(save_path, f'{image_name}_5_pothole_areas.png')
+    area_viz_save_path = os.path.join(save_path, f'{image_name}_5_area_scores.png')
     plt.savefig(area_viz_save_path, dpi=300, bbox_inches='tight')
     plt.close(fig)
     
@@ -253,13 +253,13 @@ def visualize_depth_results(depth_results, save_path, image_name):
     plt.tight_layout()
     plt.subplots_adjust(top=0.95)
     
-    depth_save_path = os.path.join(save_path, f'{image_name}_6_depth_visualization.png')
+    depth_save_path = os.path.join(save_path, f'{image_name}_6_depth_scores.png')
     plt.savefig(depth_save_path, dpi=300, bbox_inches='tight')
     plt.close()
     return fig
 
 # Function to visualize area, depth and categorization results
-def visualize_area_depth_results(pothole_categorizations, filtered_detections, save_path, image_name):
+def visualize_categories_results(pothole_categorizations, filtered_detections, save_path, image_name):
     fig, ax = plt.subplots(figsize=(10, 8))
     
     on_road_indices = [i for i, (_, _, is_on_road, _) in enumerate(filtered_detections) if is_on_road] # Filter for potholes on road only
@@ -316,7 +316,7 @@ def visualize_area_depth_results(pothole_categorizations, filtered_detections, s
     
     plt.tight_layout()
     
-    area_depth_save_path = os.path.join(save_path, f'{image_name}_7_area_depth_visualization.png')
+    area_depth_save_path = os.path.join(save_path, f'{image_name}_7_pothole_categories.png')
     plt.savefig(area_depth_save_path, dpi=300, bbox_inches='tight')
     plt.close(fig)
     

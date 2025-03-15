@@ -12,7 +12,7 @@ Pothole #1: ON road
     Normalized Area: 0.323
     Estimated Relative Depth: 227.25660705566406
     Normalized Depth: 0.269
-    Categorization: NA
+    Categorization: Low
     Categorization Score: 0.592
 Pothole #2: ON road
     Bounding box: [71.15, 1337.36, 1280.09, 1850.16]
@@ -22,5 +22,5 @@ Pothole #2: ON road
     Normalized Area: 0.2467
     Estimated Relative Depth: 219.3563995361328
     Normalized Depth: 0.2909
-    Categorization: NA
+    Categorization: Low
     Categorization Score: 0.5376
