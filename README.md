@@ -66,6 +66,8 @@ Before running the pipeline, ensure you have:
 
 ### Running Application
 The **IMAGE_RESOLUTION** should be the same as specified in the `config.py`. You can resize the images using the `resolution_converter.py` file under `data/images`. The resolution can be specified at runtime by using the command line arguments. 
+
+**As of right now, the only supported resolution is 3280x2464... the scaling factors for area estimation were calculated based on this resolution, so using a different image resolution may cause worse performance and estimations for the area.**
 ```bash
 # Process a single image
 python main.py --input data/images/road_image.jpg
