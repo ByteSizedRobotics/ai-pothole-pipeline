@@ -20,6 +20,7 @@ def load_model():
     #     model = torch.hub.load('ultralytics/yolov5', 'yolov5l', pretrained=True)
     # elif model_type == "yolo5x":
     #     model = torch.hub.load('ultralytics/yolov5', 'yolov5x', pretrained=True)
+    model.to('cuda')  # Move model to GPU
 
 # PERFORMS LIVE VIDEO INFERENCE
 def live_camera_inference(pathSavedImages):
