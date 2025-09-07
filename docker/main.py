@@ -98,26 +98,23 @@ class PotholeDetectionService:
             # Run detection
             results = self.model(frame)
             detections = []
-            
             for det in results.xyxy[0].tolist():
                 x1, y1, x2, y2, conf, cls = det
-                detections.append({
-                    'bbox': [int(x1), int(y1), int(x2), int(y2)],
-                    'confidence': float(conf)
-                })
-                # Draw rectangle and label on image
-                cv2.rectangle(frame, (int(x1), int(y1)), (int(x2), int(y2)), (255, 0, 0), 2)
-            
+                if conf >= 0.5:
+                    detections.append({
+                        'bbox': [int(x1), int(y1), int(x2), int(y2)],
+                        'confidence': float(conf)
+                    })
+                    # Draw rectangle and label on image
+                    cv2.rectangle(frame, (int(x1), int(y1)), (int(x2), int(y2)), (255, 0, 0), 2)
             # If potholes detected, save the frame
             if detections:
                 self.new_pothole_detection = True
                 self.latest_detection_frame = frame.copy()
                 self.latest_detections = detections  # Store detections for queue
                 self.detection_count += 1
-
                 # TODO: NATHAN MAKE API ENDPOINT CALL TO send detected pothole image (make sure to send timestamp)
                 timestamp = int(time.time())
-
                 # filename = f"pothole_detection_{self.detection_count}_{timestamp}.jpg"
                 # cv2.imwrite(filename, frame)
                 # print(f"Pothole detected! Saved frame as {filename} (Total detections: {self.detection_count})")
@@ -260,7 +257,7 @@ class SeverityCalculationService():
         return pothole_areas, pothole_depths
     
 class FilteringService():
-    def __init__(self, image, detections, road_mask):
+    def __init__(self, image, detections):
         self.image = image
         self.detections = detections
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu') # TODO: NATHAN verify its running on GPU
@@ -309,41 +306,90 @@ class FilteringService():
 
             # Create road mask (class index 1 is road in Cityscapes but 0 is the one for road??)
             road_mask = (predictions == 0).astype(np.uint8)
-            return road_mask
+            return road_mask, predictions
         
-    def filter_detections(self, road_mask):
+    def filter_detections(self, road_mask, full_seg):
+        filtered_values = []
+        min_road_threshold = 0.60  # Minimum percentage of pothole pixels that must be on the road to be considered valid
+        for detection in self.detections:
+            bbox = detection['bbox']
+            confidence = detection['confidence']
+            x1, y1, x2, y2 = map(int, bbox)
+            is_on_road = False
+            total_num_points = 0
+            num_points_on_road = 0
+            num_points_on_vegetation = 0
+            step = 5
+            for x in range(x1, x2, step):
+                for y in range(y1, y2, step):
+                    x = x-1
+                    y = y-1
+                    if 0 <= x <= road_mask.shape[1] and 0 <= y <= road_mask.shape[0]:
+                        total_num_points += 1
+                        if road_mask[y, x] == 1:
+                            num_points_on_road += 1
+                        elif full_seg[y, x] == 8:
+                            num_points_on_vegetation += 1 
+
+            percentage_pixels_on_road = (num_points_on_road / total_num_points)
+            percentage_pixels_on_vegetation = (num_points_on_vegetation / total_num_points)
+
+            if percentage_pixels_on_road >= min_road_threshold:
+                is_on_road = True
+            elif confidence >= 0.80 and percentage_pixels_on_road >= 0.30: # TODO: NATHAN update maybe this elif check not needed
+                is_on_road = True
+            elif confidence >= 0.75 and percentage_pixels_on_vegetation >= 0.5 and percentage_pixels_on_road >= 0.05:
+                is_on_road = True
+            filtered_values.append(is_on_road)
+        return filtered_values
     
     def run(self):
-        for detection in self.detections:
+        road_mask, full_seg = self.segment_image(self.image)
+        filtered_values = self.filter_detections(road_mask, full_seg)
+        return filtered_values
             
 
 if __name__ == '__main__':
     import queue
+    import threading
     from concurrent.futures import ThreadPoolExecutor
     
     detection_queue = queue.Queue()
 
+    # Main worker function to create 2 parallel threads for 1) severity calculation and 2) segmentation/filtering
     def process_detection(frame, detections):
-        try:
-            # Create and run severity calculation service
+        areas, depths, filtered_values = None, None, None
+
+        def severity_task():
+            nonlocal areas, depths
             severityService = SeverityCalculationService(frame, detections)
             areas, depths = severityService.run()
-            
-            print(f"Processed pothole - Areas: {areas}, Depths: {depths}")
-            return areas, depths
+
+        def filtering_task():
+            nonlocal filtered_values
+            filteringService = FilteringService(frame, detections)
+            filtered_values = filteringService.run()
+        try:
+            t1 = threading.Thread(target=severity_task)
+            t2 = threading.Thread(target=filtering_task)
+            t1.start()
+            t2.start()
+            t1.join()
+            t2.join()
+            return areas, depths, filtered_values
         except Exception as e:
             print(f"Error processing detection: {e}")
-            return None, None
+            return None, None, None
 
 
-
-    # PROCESS 1: Pothole detection from webRTC stream from CSI camera on raspi
+    # Process 1: Pothole detection from webRTC stream from CSI camera on raspi
     potholeDetectionService = PotholeDetectionService()
     detection_thread = threading.Thread(target=potholeDetectionService.run, daemon=True)
     detection_thread.start()
 
     
-    # PROCESS 2-6: Severity calculation workers
+    # Process 2-6: Calls a maximum of 5 workers to perform process detection function
+    #              This function spins off 2 parallel threads for severity calculation and segmentation/filtering
     with ThreadPoolExecutor(max_workers=5) as executor:
         while True:
             # Check for new detected pothole frames
@@ -360,8 +406,11 @@ if __name__ == '__main__':
             if not detection_queue.empty():
                 frame, detections = detection_queue.get()
                 
-                # Submit task to thread pool (non-blocking)
                 future = executor.submit(process_detection, frame, detections)
-                # Optional: You can collect futures and check results later if needed
+                
+                results = future.result()
+                areas, depths, filtered_values = results
+
+                # TODO: NATHAN make API call to send results per detection ID
                 
             time.sleep(0.1)  # Avoid busy waiting
