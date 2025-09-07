@@ -12,18 +12,16 @@ class DepthEstimation:
         Initialize the DepthAnythingV2 model
         """
         print(f"Initializing Depth Estimation Model")
-        model = torch.hub.load('ultralytics/yolov5', 'custom', path=self.config.POTHOLE_MODEL_PATH).to(self.device)
-        self.model = model
+        self.model = DepthAnythingV2(**self.config.DEPTH_ANYTHING_MODEL_CONFIGS[self.config.DEPTH_ANYTHING_ENCODER])
+        self.model.load_state_dict(torch.load(f'{self.config.DEPTH_ANYTHING_CHECKPOINT_DIR}/depth_anything_v2_{self.config.DEPTH_ANYTHING_ENCODER}.pth', map_location='cpu')) # TODO: NATHAN maybe change this to gpu?
+        self.model = self.model.to(self.device).eval()
 
         
     def detect(self, image):
         """
         Return DepthAnythingV2 depth map for the given image
         """       
-        model = DepthAnythingV2(**self.config.DEPTH_ANYTHING_MODEL_CONFIGS[self.config.DEPTH_ANYTHING_ENCODER])
-        model.load_state_dict(torch.load(f'{self.config.DEPTH_ANYTHING_CHECKPOINT_DIR}/depth_anything_v2_{self.config.DEPTH_ANYTHING_ENCODER}.pth', map_location='cpu')) # TODO: NATHAN maybe change this to gpu?
-        model = model.to(self.device).eval()
 
         #raw_img = cv2.imread('')
-        depth = model.infer_image(image) # HxW raw depth map in numpy
+        depth = self.model.infer_image(image) # HxW raw depth map in numpy
         return depth
