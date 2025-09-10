@@ -9,15 +9,15 @@ import time
 import os
 import torch.nn as nn
 from aiortc import RTCPeerConnection, RTCSessionDescription
-from models.DepthAnythingV2.depth_anything_v2.dpt import DepthAnythingV2
+from aimodels.DepthAnythingV2.depth_anything_v2.dpt import DepthAnythingV2
 
 from torchvision import transforms as T
-import models.DeepLabV3Plus.network as network
-import models.DeepLabV3Plus.utils as utils
-from models.DeepLabV3Plus.datasets import VOCSegmentation, Cityscapes
+import aimodels.DeepLabV3Plus.network as network
+import aimodels.DeepLabV3Plus.utils as utils
+from aimodels.DeepLabV3Plus.datasets import VOCSegmentation, Cityscapes
 
 class PotholeDetectionService:
-    def __init__(self, model_path='pothole_model_2025_03_01', webrtc_uri="ws://localhost:8765"): # TODO: NATHAN change this to raspi IP address
+    def __init__(self, model_path='aimodels/pothole_model_2025_03_01', webrtc_uri="ws://100.85.202.20:8765"): # TODO: NATHAN change this to raspi IP address (pass it into the docker container upon creation)
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu') # TODO: NATHAN make sure GPU works
         self.model = torch.hub.load('ultralytics/yolov5', 'custom', path=model_path).to(self.device)
         self.webrtc_uri = webrtc_uri
@@ -47,8 +47,9 @@ class PotholeDetectionService:
                     print(f"Track received: {track.kind}")
                     if track.kind == "video":
                         asyncio.create_task(self.receive_video_frames(track))
-                
+
                 # Create offer
+                self.pc.addTransceiver("video", direction="recvonly")
                 offer = await self.pc.createOffer()
                 await self.pc.setLocalDescription(offer)
                 
@@ -69,7 +70,7 @@ class PotholeDetectionService:
                     elif data.get("type") == "ice-candidate":
                         # Handle ICE candidates if needed
                         pass
-                
+                                    
                 # Keep connection alive
                 await asyncio.Future()  # Run forever
                 
@@ -105,7 +106,10 @@ class PotholeDetectionService:
                         'bbox': [int(x1), int(y1), int(x2), int(y2)],
                         'confidence': float(conf)
                     })
+
+                    # TODO: NATHAN don't draw rectangles on image in prod, only for debugging
                     # Draw rectangle and label on image
+                    cv2.putText(frame, f"Detection {len(detections)}: {conf:.2f}", (int(x1), int(y1)-10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
                     cv2.rectangle(frame, (int(x1), int(y1)), (int(x2), int(y2)), (255, 0, 0), 2)
             # If potholes detected, save the frame
             if detections:
@@ -115,9 +119,11 @@ class PotholeDetectionService:
                 self.detection_count += 1
                 # TODO: NATHAN MAKE API ENDPOINT CALL TO send detected pothole image (make sure to send timestamp)
                 timestamp = int(time.time())
-                # filename = f"pothole_detection_{self.detection_count}_{timestamp}.jpg"
-                # cv2.imwrite(filename, frame)
-                # print(f"Pothole detected! Saved frame as {filename} (Total detections: {self.detection_count})")
+
+                # TODO: NATHAN DEBUG CODE
+                filename = f"pothole_detection_{self.detection_count}_{timestamp}.jpg"
+                cv2.imwrite(filename, frame)
+                print(f"Pothole detected! Saved frame as {filename} (Total detections: {self.detection_count})")
 
     def start_webrtc_connection(self):
         """Start WebRTC connection in background thread"""
@@ -142,7 +148,7 @@ class SeverityCalculationService():
 
         #initialize depth estimation model
         self.depth_model = DepthAnythingV2({'encoder': 'vitl', 'features': 256, 'out_channels': [256, 512, 1024, 1024]}) # large model
-        self.depth_model.load_state_dict(torch.load('models/DepthAnythingV2/checkpoints/depth_anything_v2_vitl.pth', map_location='cpu')) # TODO: NATHAN change this to gpu?
+        self.depth_model.load_state_dict(torch.load('aimodels/DepthAnythingV2/checkpoints/depth_anything_v2_vitl.pth', map_location='cpu')) # TODO: NATHAN change this to gpu?
         self.depth_model = self.depth_model.to(self.device).eval()
 
     def estimate_area(self):
@@ -254,6 +260,14 @@ class SeverityCalculationService():
         # severities = self.calculate_severity(pothole_areas, pothole_depths)
 
         #TODO: NATHAN make API endpoint call to send severity results
+
+        # TODO: NATHAN DEBUG CODE
+        for i, detection in enumerate(self.detections):
+            bbox = detection['bbox']
+            confidence = detection['confidence']
+            with open("severity_results.txt", "a") as f:
+                f.write(f"Detection {i+1}: BBox={bbox}, Confidence={confidence:.2f}, Area={pothole_areas[i]:.4f} m^2, Depth={pothole_depths[i]:.4f} m\n")
+            print(f"Detection {i+1}: BBox={bbox}, Confidence={confidence:.2f}, Area={pothole_areas[i]:.4f} m^2, Depth={pothole_depths[i]:.4f} m")
         return pothole_areas, pothole_depths
     
 class FilteringService():
@@ -346,6 +360,13 @@ class FilteringService():
     def run(self):
         road_mask, full_seg = self.segment_image(self.image)
         filtered_values = self.filter_detections(road_mask, full_seg)
+        # TODO: NATHAN DEBUG CODE
+        for i, detection in enumerate(self.detections):
+            bbox = detection['bbox']
+            confidence = detection['confidence']
+            on_road = filtered_values[i]
+            with open("segmentation_results.txt", "a") as f:
+                f.write(f"Detection {i+1}: BBox={bbox}, Confidence={confidence:.2f}, On Road={on_road}\n")
         return filtered_values
             
 
