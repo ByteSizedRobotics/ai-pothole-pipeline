@@ -120,3 +120,6 @@ The source code and all credit for these models belong to their respective autho
 - [Repository](https://github.com/DepthAnything/Depth-Anything-V2/)
 - Small model: [Apache-2.0 License](modules/ai_models/DepthAnythingV2/LICENSE)
 - Base, Large, Giant models: CC-BY-NC-4.0 License (non-commercial use only).
+
+**NOTE**
+- Make sure you do the right torch install (ie. with CUDA) to support CUDA running for the docker app (under docker folder). 
