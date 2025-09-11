@@ -16,7 +16,7 @@ warnings.filterwarnings("ignore", category=FutureWarning)
 from torchvision import transforms as T
 import aimodels.DeepLabV3Plus.network as network
 import aimodels.DeepLabV3Plus.utils as utils
-from aimodels.DeepLabV3Plus.datasets import VOCSegmentation, Cityscapes
+from aimodels.DeepLabV3Plus.datasets import Cityscapes
 
 class PotholeDetectionService:
     def __init__(self, model_path='aimodels/pothole_model_2025_03_01', webrtc_uri="ws://100.85.202.20:8765"): # TODO: NATHAN change this to raspi IP address (pass it into the docker container upon creation)
@@ -24,17 +24,17 @@ class PotholeDetectionService:
         self.model = torch.hub.load('ultralytics/yolov5', 'custom', path=model_path).to(self.device)
         self.webrtc_uri = webrtc_uri
         
-        print(torch.cuda.is_available())  # True if CUDA GPU is detected
-        print(torch.cuda.device_count())  # Number of GPUs
-        print(torch.cuda.get_device_name(0))  # GPU name
-
-        # Global variables for video stream
+        # Video stream variables
         self.current_frame = None
         self.pc = None
+        self.frame_lock = threading.Lock()  # Thread-safe frame access
+        
+        # Detection processing variables
         self.new_pothole_detection = False
         self.latest_detection_frame = None
         self.latest_detections = []  # Store latest detections
         self.detection_count = 0
+        self.processing_frame = False  # Flag to check if detection is busy
         
         print(f"Pothole detection service initialized on device: {self.device}")
 
@@ -84,24 +84,36 @@ class PotholeDetectionService:
             print(f"WebRTC connection error: {e}")
 
     async def receive_video_frames(self, track):
-        """Process incoming video frames from WebRTC stream"""
+        """Continuously receive video frames from WebRTC stream - separate from processing"""
+        # frame_count = 0
         while True:
             try:
                 frame = await track.recv()
                 # Convert av.VideoFrame to numpy array
                 img = frame.to_ndarray(format="bgr24")
-                self.current_frame = img.copy()
                 
-                # Process frame for pothole detection
-                self.process_frame_for_detection(self.current_frame)
+                # Thread-safe frame update
+                with self.frame_lock:
+                    self.current_frame = img.copy()
+                
+                # frame_count += 1
+                # if frame_count % 30 == 0:  # Log every 30 frames to avoid spam
+                #     print(f"Received {frame_count} frames")
                 
             except Exception as e:
                 print(f"Error receiving frame: {e}")
                 break
 
+    def get_latest_frame(self):
+        """Thread-safe method to get the latest frame"""
+        with self.frame_lock:
+            return self.current_frame.copy() if self.current_frame is not None else None
+
     def process_frame_for_detection(self, frame):
         """Process a single frame for pothole detection"""
         if frame is not None:
+            self.processing_frame = True
+            
             # Run detection
             results = self.model(frame)
             detections = []
@@ -117,6 +129,7 @@ class PotholeDetectionService:
                     # Draw rectangle and label on image
                     cv2.putText(frame, f"Detection {len(detections)}: {conf:.2f}", (int(x1), int(y1)-10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
                     cv2.rectangle(frame, (int(x1), int(y1)), (int(x2), int(y2)), (255, 0, 0), 2)
+            
             # If potholes detected, save the frame
             if detections:
                 self.new_pothole_detection = True
@@ -130,6 +143,22 @@ class PotholeDetectionService:
                 filename = f"pothole_detection_{self.detection_count}_{timestamp}.jpg"
                 cv2.imwrite(filename, frame)
                 print(f"Pothole detected! Saved frame as {filename} (Total detections: {self.detection_count})")
+            
+            self.processing_frame = False
+
+    def detection_worker(self):
+        """Separate thread worker for processing frames for detection"""
+        print("Detection worker thread started")
+        
+        while True:
+            # Get latest frame if detection is not busy
+            if not self.processing_frame:
+                frame = self.get_latest_frame()
+                if frame is not None:
+                    self.process_frame_for_detection(frame)
+            
+            # Control processing rate - process at most 10 FPS to avoid overwhelming
+            time.sleep(0.1)
 
     def start_webrtc_connection(self):
         """Start WebRTC connection in background thread"""
@@ -138,12 +167,24 @@ class PotholeDetectionService:
         loop.run_until_complete(self.connect_to_webrtc())
 
     def run(self):
-        """Start the pothole detection service"""
+        """Start the pothole detection service with separate threads"""
         print("Starting pothole detection service...")
         print("Connecting to WebRTC stream and processing frames...")
         
-        # Start WebRTC connection
-        self.start_webrtc_connection()
+        # Start WebRTC connection in one thread
+        webrtc_thread = threading.Thread(target=self.start_webrtc_connection, daemon=True)
+        webrtc_thread.start()
+        
+        # Start detection processing in another thread
+        detection_thread = threading.Thread(target=self.detection_worker, daemon=True)
+        detection_thread.start()
+        
+        # Keep main thread alive
+        try:
+            while True:
+                time.sleep(1)
+        except KeyboardInterrupt:
+            print("Shutting down pothole detection service...")
 
 class SeverityCalculationService():
     def __init__(self, frame, detections, resolution=(3280, 2464)):
