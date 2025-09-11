@@ -10,6 +10,8 @@ import os
 import torch.nn as nn
 from aiortc import RTCPeerConnection, RTCSessionDescription
 from aimodels.DepthAnythingV2.depth_anything_v2.dpt import DepthAnythingV2
+import warnings
+warnings.filterwarnings("ignore", category=FutureWarning)
 
 from torchvision import transforms as T
 import aimodels.DeepLabV3Plus.network as network
@@ -22,6 +24,10 @@ class PotholeDetectionService:
         self.model = torch.hub.load('ultralytics/yolov5', 'custom', path=model_path).to(self.device)
         self.webrtc_uri = webrtc_uri
         
+        print(torch.cuda.is_available())  # True if CUDA GPU is detected
+        print(torch.cuda.device_count())  # Number of GPUs
+        print(torch.cuda.get_device_name(0))  # GPU name
+
         # Global variables for video stream
         self.current_frame = None
         self.pc = None
@@ -147,8 +153,8 @@ class SeverityCalculationService():
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
         #initialize depth estimation model
-        self.depth_model = DepthAnythingV2({'encoder': 'vitl', 'features': 256, 'out_channels': [256, 512, 1024, 1024]}) # large model
-        self.depth_model.load_state_dict(torch.load('aimodels/DepthAnythingV2/checkpoints/depth_anything_v2_vitl.pth', map_location='cpu')) # TODO: NATHAN change this to gpu?
+        self.depth_model = DepthAnythingV2(encoder='vitl', features=256, out_channels=[256, 512, 1024, 1024])
+        self.depth_model.load_state_dict(torch.load('aimodels/DepthAnythingV2/checkpoints/depth_anything_v2_vitl.pth',  map_location=torch.device('cuda' if torch.cuda.is_available() else 'cpu'))) # TODO: NATHAN change this to gpu?
         self.depth_model = self.depth_model.to(self.device).eval()
 
     def estimate_area(self):
@@ -257,6 +263,8 @@ class SeverityCalculationService():
         """Calculate severity based on area and depth"""
         pothole_areas = self.estimate_area()
         pothole_depths = self.estimate_depth(self.image, pothole_areas)
+        # for i in range(1000):
+        print("got areas and depths done")
         # severities = self.calculate_severity(pothole_areas, pothole_depths)
 
         #TODO: NATHAN make API endpoint call to send severity results
@@ -288,22 +296,22 @@ class FilteringService():
 
     def _init_model(self):
         # Create the DeepLabV3+ model
-        self.model = network.modeling.__dict__[self.config.DEEPLAB_MODEL](
+        self.model = network.modeling.__dict__["deeplabv3plus_resnet101"](
             num_classes=self.num_classes, 
-            output_stride=self.config.OUTPUT_STRIDE
+            output_stride=16
         )
         utils.set_bn_momentum(self.model.backbone, momentum=0.01)
         
         # load checkpoint => using CITYSCAPES WEIGHTS for road segmentation
-        if os.path.isfile(self.config.DEEPLAB_CHECKPOINT_FILE):
+        if os.path.isfile("aimodels/DeepLabV3Plus/checkpoints/deeplabv3plus_resnet101_cityscapes_os16.pth"):
             checkpoint = torch.load(
-                self.config.DEEPLAB_CHECKPOINT_FILE, 
-                map_location=torch.device('cpu'),
+                "aimodels/DeepLabV3Plus/checkpoints/deeplabv3plus_resnet101_cityscapes_os16.pth", 
+                map_location=torch.device('cuda' if torch.cuda.is_available() else 'cpu'),
                 weights_only=False
             )
             self.model.load_state_dict(checkpoint["model_state"])
-            print(f"Loaded segmentation model from {self.config.DEEPLAB_CHECKPOINT_FILE}")
-            del checkpoint
+            # print(f"Loaded segmentation model from aimodels/DeepLabV3Plus/checkpoints/deeplabv3plus_resnet101_cityscapes_os16.pth")
+            # del checkpoint
         else:
             print("[!] Warning: No checkpoint found for segmentation model")
         
@@ -393,6 +401,7 @@ if __name__ == '__main__':
         try:
             t1 = threading.Thread(target=severity_task)
             t2 = threading.Thread(target=filtering_task)
+            print("Starting severity and filtering threads...")
             t1.start()
             t2.start()
             t1.join()
