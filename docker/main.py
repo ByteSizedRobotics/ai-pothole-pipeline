@@ -140,12 +140,12 @@ class PotholeDetectionService:
                 timestamp = int(time.time())
 
                 # TODO: NATHAN DEBUG CODE
-                filename = f"pothole_detection_{self.detection_count}_{timestamp}.jpg"
+                filename = f"pothole_detection_{self.detection_count}.jpg"
                 cv2.imwrite(filename, frame)
                 print(f"Pothole detected! Saved frame as {filename} (Total detections: {self.detection_count})")
             
             self.processing_frame = False
-            time.sleep(3)  # Small delay of 3 seconds
+            time.sleep(0.1)  # Small delay of 0.1 seconds
     def detection_worker(self):
         """Separate thread worker for processing frames for detection"""
         print("Detection worker thread started")
@@ -176,7 +176,7 @@ class PotholeDetectionService:
         webrtc_thread.start()
         
         # Start detection processing in another thread
-        detection_thread = threading.Thread(target=self.detection_worker, daemon=True)
+        detection_thread = threading.Thread(target=self.detection_worker)
         detection_thread.start()
         
         # Keep main thread alive
@@ -193,6 +193,8 @@ class SeverityCalculationService():
         self.image = frame
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
+        self.detection_num_sev = 0
+
         #initialize depth estimation model
         self.depth_model = DepthAnythingV2(encoder='vitl', features=256, out_channels=[256, 512, 1024, 1024])
         self.depth_model.load_state_dict(torch.load('aimodels/DepthAnythingV2/checkpoints/depth_anything_v2_vitl.pth',  map_location=torch.device('cuda' if torch.cuda.is_available() else 'cpu'))) # TODO: NATHAN change this to gpu?
@@ -200,6 +202,7 @@ class SeverityCalculationService():
 
     def estimate_area(self):
         pothole_areas = []
+        pothole_areas_norm = []
 
         for detection in self.detections:
             bbox = detection['bbox']  # Extract bbox from dictionary
@@ -225,9 +228,21 @@ class SeverityCalculationService():
 
             
             area = x_scaling_factor * y_scaling_factor * bounding_box_area * 100000
-            pothole_areas.append(area)
 
-        return pothole_areas
+            max_area_final = 2.0
+            min_area_final = 0.1
+            estimated_area = area
+
+            ##### calculate the normalized area => [0, 1]
+            if (estimated_area >= max_area_final): # in cases that the area score is greater than 2.0 than just assign the normalized value to 1.0
+                area_norm = 1.0
+            else:
+                area_norm = (estimated_area - min_area_final) / (max_area_final - min_area_final)
+
+            pothole_areas.append(estimated_area)
+            pothole_areas_norm.append(area_norm)
+
+        return pothole_areas, pothole_areas_norm
     
     def estimate_depth(self, image, pothole_areas):
         pothole_depths = []
@@ -302,7 +317,7 @@ class SeverityCalculationService():
 
     def run(self):
         """Calculate severity based on area and depth"""
-        pothole_areas = self.estimate_area()
+        pothole_areas, pothole_areas_norm = self.estimate_area()
         pothole_depths = self.estimate_depth(self.image, pothole_areas)
         # for i in range(1000):
         print("got areas and depths done")
@@ -312,12 +327,11 @@ class SeverityCalculationService():
 
         # TODO: NATHAN DEBUG CODE
         for i, detection in enumerate(self.detections):
-            bbox = detection['bbox']
-            confidence = detection['confidence']
             with open("severity_results.txt", "a") as f:
-                f.write(f"Detection {i+1}: BBox={bbox}, Confidence={confidence:.2f}, Area={pothole_areas[i]:.4f} m^2, Depth={pothole_depths[i]:.4f} m\n")
-            print(f"Detection {i+1}: BBox={bbox}, Confidence={confidence:.2f}, Area={pothole_areas[i]:.4f} m^2, Depth={pothole_depths[i]:.4f} m")
-        return pothole_areas, pothole_depths
+                f.write(f"Detection {self.detection_num_sev+1}: Area Score={pothole_areas_norm[i]:.4f}, Depth Score={pothole_depths[i]:.4f} m\n")
+            self.detection_num_sev += 1
+            print(f"Detection {self.detection_num_sev}: Area Score ={pothole_areas_norm[i]:.4f}, Depth Score={pothole_depths[i]:.4f}")
+        return pothole_areas_norm, pothole_depths
     
 class FilteringService():
     def __init__(self, image, detections):
@@ -326,6 +340,9 @@ class FilteringService():
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu') # TODO: NATHAN verify its running on GPU
         self.num_classes = 19
         self.decode_fn = Cityscapes.decode_target
+
+        self.detection_num_seg = 0
+
         self._init_model()
         
         # Initialize transformations
@@ -411,11 +428,13 @@ class FilteringService():
         filtered_values = self.filter_detections(road_mask, full_seg)
         # TODO: NATHAN DEBUG CODE
         for i, detection in enumerate(self.detections):
-            bbox = detection['bbox']
-            confidence = detection['confidence']
+            # bbox = detection['bbox']
+            # confidence = detection['confidence']
             on_road = filtered_values[i]
             with open("segmentation_results.txt", "a") as f:
-                f.write(f"Detection {i+1}: BBox={bbox}, Confidence={confidence:.2f}, On Road={on_road}\n")
+                f.write(f"Detection {self.detection_num_seg+1}: On Road={on_road}\n")
+                print(f"Detection {self.detection_num_seg}: On Road={on_road}")
+            self.detection_num_seg += 1
         return filtered_values
             
 
@@ -462,26 +481,28 @@ if __name__ == '__main__':
     # Process 2-6: Calls a maximum of 5 workers to perform process detection function
     #              This function spins off 2 parallel threads for severity calculation and segmentation/filtering
     with ThreadPoolExecutor(max_workers=5) as executor:
+        futures = []
         while True:
-            # Check for new detected pothole frames
+            # Add new detections to the queue
             if potholeDetectionService.new_pothole_detection:
                 frame = potholeDetectionService.latest_detection_frame
                 detections = potholeDetectionService.latest_detections
-                
                 detection_queue.put((frame, detections))
                 potholeDetectionService.new_pothole_detection = False
-                
                 print(f"Added detection to queue. Queue size: {detection_queue.qsize()}")
-            
-            # Process items from queue using thread pool
-            if not detection_queue.empty():
-                frame, detections = detection_queue.get()
-                
-                future = executor.submit(process_detection, frame, detections)
-                
-                results = future.result()
-                areas, depths, filtered_values = results
 
-                # TODO: NATHAN make API call to send results per detection ID
-                
+            # Submit tasks for all items in the queue (up to 5 at a time)
+            while not detection_queue.empty() and len(futures) < 5:
+                frame, detections = detection_queue.get()
+                future = executor.submit(process_detection, frame, detections)
+                futures.append(future)
+
+            # Check for completed futures
+            for future in futures[:]:
+                if future.done():
+                    results = future.result()
+                    areas, depths, filtered_values = results
+                    # TODO: NATHAN make API call to send results per detection ID
+                    futures.remove(future)
+
             time.sleep(0.1)  # Avoid busy waiting
