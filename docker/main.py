@@ -145,7 +145,7 @@ class PotholeDetectionService:
                 print(f"Pothole detected! Saved frame as {filename} (Total detections: {self.detection_count})")
             
             self.processing_frame = False
-
+            time.sleep(3)  # Small delay of 3 seconds
     def detection_worker(self):
         """Separate thread worker for processing frames for detection"""
         print("Detection worker thread started")
@@ -253,7 +253,7 @@ class SeverityCalculationService():
             cropped_potholes.append(resized_pothole)
 
             # Use the correct model reference and method
-            depth_map = self.depth_model(resized_pothole)  # perform depth estimation with DepthAnythingV2 model
+            depth_map = self.depth_model.infer_image(resized_pothole)  # perform depth estimation with DepthAnythingV2 model
 
             min_depth = np.percentile(depth_map, 50)
             max_depth = np.percentile(depth_map, 95)
@@ -344,9 +344,9 @@ class FilteringService():
         utils.set_bn_momentum(self.model.backbone, momentum=0.01)
         
         # load checkpoint => using CITYSCAPES WEIGHTS for road segmentation
-        if os.path.isfile("aimodels/DeepLabV3Plus/checkpoints/deeplabv3plus_resnet101_cityscapes_os16.pth"):
+        if os.path.isfile("aimodels/DeepLabV3Plus/checkpoints/best_deeplabv3plus_resnet101_cityscapes_os16.pth"):
             checkpoint = torch.load(
-                "aimodels/DeepLabV3Plus/checkpoints/deeplabv3plus_resnet101_cityscapes_os16.pth", 
+                "aimodels/DeepLabV3Plus/checkpoints/best_deeplabv3plus_resnet101_cityscapes_os16.pth", 
                 map_location=torch.device('cuda' if torch.cuda.is_available() else 'cpu'),
                 weights_only=False
             )
