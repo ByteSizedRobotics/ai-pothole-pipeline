@@ -7,6 +7,7 @@ import threading
 import numpy as np
 import time
 import os
+import requests
 import torch.nn as nn
 from aiortc import RTCPeerConnection, RTCSessionDescription
 from aimodels.DepthAnythingV2.depth_anything_v2.dpt import DepthAnythingV2
@@ -17,6 +18,10 @@ from torchvision import transforms as T
 import aimodels.DeepLabV3Plus.network as network
 import aimodels.DeepLabV3Plus.utils as utils
 from aimodels.DeepLabV3Plus.datasets import Cityscapes
+
+debug_mode = True
+
+# TODO: NATHAN pass in webRTC url, 
 
 class PotholeDetectionService:
     def __init__(self, model_path='aimodels/pothole_model_2025_03_01', webrtc_uri="ws://100.85.202.20:8765"): # TODO: NATHAN change this to raspi IP address (pass it into the docker container upon creation)
@@ -35,6 +40,8 @@ class PotholeDetectionService:
         self.latest_detections = []  # Store latest detections
         self.detection_count = 0
         self.processing_frame = False  # Flag to check if detection is busy
+
+        self.image_id = None # DB image ID from API
         
         print(f"Pothole detection service initialized on device: {self.device}")
 
@@ -108,6 +115,33 @@ class PotholeDetectionService:
         """Thread-safe method to get the latest frame"""
         with self.frame_lock:
             return self.current_frame.copy() if self.current_frame is not None else None
+        
+    def send_frame_to_api(self, frame):
+        # Encode frame as JPEG in memory
+        success, encoded_image = cv2.imencode('.jpg', frame)
+        if not success:
+            print("Failed to encode image")
+            return None
+
+        # Prepare the file payload
+        files = {
+            'image': ('frame.jpg', encoded_image.tobytes(), 'image/jpeg')
+        }
+
+        # Make the POST request
+        response = requests.post('http://localhost:5173/api/images', files=files)
+        print("Sent image/frame to API, Status Code:", response.status_code)
+        return response.json().get('image_id')
+    
+    def send_detection_results_to_api(self, image_id, x1, y1, x2, y2, confidence):
+        payload = {
+            'image_id': image_id,
+            "confidence": confidence,
+            "bbox": [int(x1), int(y1), int(x2), int(y2)]
+        }
+        response = requests.post('http://localhost:5173/api/detections', json=payload)
+        print("Sent detection results to API, Status Code:", response.status_code)
+        return response.json().get('detection_id')
 
     def process_frame_for_detection(self, frame):
         """Process a single frame for pothole detection"""
@@ -119,16 +153,16 @@ class PotholeDetectionService:
             detections = []
             for det in results.xyxy[0].tolist():
                 x1, y1, x2, y2, conf, cls = det
-                if conf >= 0.5:
+                if conf >= 0.0:
                     detections.append({
                         'bbox': [int(x1), int(y1), int(x2), int(y2)],
                         'confidence': float(conf)
                     })
 
-                    # TODO: NATHAN don't draw rectangles on image in prod, only for debugging
-                    # Draw rectangle and label on image
-                    cv2.putText(frame, f"Detection {len(detections)}: {conf:.2f}", (int(x1), int(y1)-10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
-                    cv2.rectangle(frame, (int(x1), int(y1)), (int(x2), int(y2)), (255, 0, 0), 2)
+                    # Don't draw rectangles on image in prod, only for debugging
+                    if debug_mode:
+                        cv2.putText(frame, f"Detection {len(detections)}: {conf:.2f}", (int(x1), int(y1)-10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
+                        cv2.rectangle(frame, (int(x1), int(y1)), (int(x2), int(y2)), (255, 0, 0), 2)
             
             # If potholes detected, save the frame
             if detections:
@@ -136,13 +170,22 @@ class PotholeDetectionService:
                 self.latest_detection_frame = frame.copy()
                 self.latest_detections = detections  # Store detections for queue
                 self.detection_count += 1
-                # TODO: NATHAN MAKE API ENDPOINT CALL TO send detected pothole image (make sure to send timestamp)
-                timestamp = int(time.time())
 
-                # TODO: NATHAN DEBUG CODE
-                filename = f"pothole_detection_{self.detection_count}.jpg"
-                cv2.imwrite(filename, frame)
-                print(f"Pothole detected! Saved frame as {filename} (Total detections: {self.detection_count})")
+                # TODO: NATHAN MAKE API ENDPOINT CALL TO image and send detections (make sure to send timestamp)
+                self.image_id_response = self.send_frame_to_api(frame)
+                print(f"API response, image id: {self.image_id_response}")
+
+                for det in detections:
+                    x1, y1, x2, y2 = det['bbox']
+                    confidence = det['confidence']
+                    detection_id_response = self.send_detection_results_to_api(self.image_id_response, x1, y1, x2, y2, confidence)
+                    print(f"API response, detection id: {detection_id_response}")
+
+                # DEBUG CODE
+                if debug_mode:
+                    filename = f"pothole_detection_{self.detection_count}.jpg"
+                    cv2.imwrite(filename, frame)
+                    print(f"Pothole detected! Saved frame as {filename} (Total detections: {self.detection_count})")
             
             self.processing_frame = False
             time.sleep(0.1)  # Small delay of 0.1 seconds
@@ -282,55 +325,21 @@ class SeverityCalculationService():
             pothole_depths.append(normalized_depth)
             
         return pothole_depths
-    
-    def calculate_severity(self, areas, depths):
-        severities = []
-
-        for area, depth in zip(areas, depths):
-            max_area_final = 2.0
-            min_area_final = 0.1
-            estimated_area = area
-
-            ##### calculate the normalized area => [0, 1]
-            if (estimated_area >= max_area_final): # in cases that the area score is greater than 2.0 than just assign the normalized value to 1.0
-                area_norm = 1.0
-            else:
-                area_norm = (estimated_area - min_area_final) / (max_area_final - min_area_final)
-
-            total_score = depth + area_norm
-
-            # Categorization of the potholes based on the normalized area and depth values
-            if 1.6 <= total_score <= 2.0:
-                category = "Critical"
-            elif 1.0 <= total_score < 1.6:
-                category = "High"
-            elif 0.6 <= total_score < 1.0:
-                category = "Moderate"
-            elif 0.0 <= total_score < 0.6:
-                category = "Low"
-            else: # for potholes 'not on the road' => in that case total_score = -1
-                category = "NA"
-
-            severities.append(category)
-        return severities
             
 
     def run(self):
-        """Calculate severity based on area and depth"""
+        """Calculate area and depth scores"""
         pothole_areas, pothole_areas_norm = self.estimate_area()
-        pothole_depths = self.estimate_depth(self.image, pothole_areas)
-        # for i in range(1000):
-        print("got areas and depths done")
-        # severities = self.calculate_severity(pothole_areas, pothole_depths)
+        pothole_depths = self.estimate_depth(self.image, pothole_areas) # needs non-normalized areas for depth estimation        
 
-        #TODO: NATHAN make API endpoint call to send severity results
-
-        # TODO: NATHAN DEBUG CODE
-        for i, detection in enumerate(self.detections):
-            with open("severity_results.txt", "a") as f:
-                f.write(f"Detection {self.detection_num_sev+1}: Area Score={pothole_areas_norm[i]:.4f}, Depth Score={pothole_depths[i]:.4f} m\n")
-            self.detection_num_sev += 1
-            print(f"Detection {self.detection_num_sev}: Area Score ={pothole_areas_norm[i]:.4f}, Depth Score={pothole_depths[i]:.4f}")
+        # DEBUG CODE
+        if debug_mode:
+            print("got areas and depths done")
+            for i, detection in enumerate(self.detections):
+                with open("severity_results.txt", "a") as f:
+                    f.write(f"Detection {self.detection_num_sev+1}: Area Score={pothole_areas_norm[i]:.4f}, Depth Score={pothole_depths[i]:.4f} m\n")
+                self.detection_num_sev += 1
+                print(f"Detection {self.detection_num_sev}: Area Score ={pothole_areas_norm[i]:.4f}, Depth Score={pothole_depths[i]:.4f}")
         return pothole_areas_norm, pothole_depths
     
 class FilteringService():
@@ -426,15 +435,19 @@ class FilteringService():
     def run(self):
         road_mask, full_seg = self.segment_image(self.image)
         filtered_values = self.filter_detections(road_mask, full_seg)
-        # TODO: NATHAN DEBUG CODE
-        for i, detection in enumerate(self.detections):
-            # bbox = detection['bbox']
-            # confidence = detection['confidence']
-            on_road = filtered_values[i]
-            with open("segmentation_results.txt", "a") as f:
-                f.write(f"Detection {self.detection_num_seg+1}: On Road={on_road}\n")
-                print(f"Detection {self.detection_num_seg}: On Road={on_road}")
-            self.detection_num_seg += 1
+
+        # DEBUG CODE
+        if debug_mode:
+            for i, detection in enumerate(self.detections):
+                # bbox = detection['bbox']
+                # confidence = detection['confidence']
+                on_road = filtered_values[i]
+                if filtered_values[i]:
+                    on_road = 0
+                with open("segmentation_results.txt", "a") as f:
+                    f.write(f"Detection {self.detection_num_seg+1}: On Road={on_road}\n")
+                    print(f"Detection {self.detection_num_seg}: On Road={on_road}")
+                self.detection_num_seg += 1
         return filtered_values
             
 
@@ -470,6 +483,20 @@ if __name__ == '__main__':
         except Exception as e:
             print(f"Error processing detection: {e}")
             return None, None, None
+    
+    def send_results_to_api(areas, depths, filtered_values):
+        for i in range(len(areas)):
+            payload = {
+                'areaScore': areas[i],
+                'depthScore': depths[i],
+                'falsePositive': filtered_values[i]
+            }
+            response = requests.post(f'http://localhost:5173/api/detections/{i}', json=payload)
+            print(f"Sent AI processing results to API detection ID: {i}, Status Code: {response.status_code}")
+            print(f"Image ID: {response.json().get('image_id')}, Detection ID: {response.json().get('detection_id')}")
+
+            response = requests.post('http://localhost:5173/api/detections', json=payload)
+            return response.json().get("detection_id")
 
 
     # Process 1: Pothole detection from webRTC stream from CSI camera on raspi
@@ -503,6 +530,8 @@ if __name__ == '__main__':
                     results = future.result()
                     areas, depths, filtered_values = results
                     # TODO: NATHAN make API call to send results per detection ID
+
+
                     futures.remove(future)
 
             time.sleep(0.1)  # Avoid busy waiting
