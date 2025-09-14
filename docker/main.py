@@ -125,13 +125,14 @@ class PotholeDetectionService:
 
         # Prepare the file payload
         files = {
-            'image': ('frame.jpg', encoded_image.tobytes(), 'image/jpeg')
+            'image': (f'frame_{self.image_id}_{self.detection_count}.jpg', encoded_image.tobytes(), 'image/jpeg')
         }
 
         # Make the POST request
         response = requests.post('http://localhost:5173/api/images', files=files)
         print("Sent image/frame to API, Status Code:", response.status_code)
-        return response.json().get('image_id')
+        self.image_id = response.json().get('image_id')
+        return self.image_id
     
     def send_detection_results_to_api(self, image_id, x1, y1, x2, y2, confidence):
         payload = {
@@ -153,7 +154,7 @@ class PotholeDetectionService:
             detections = []
             for det in results.xyxy[0].tolist():
                 x1, y1, x2, y2, conf, cls = det
-                if conf >= 0.0:
+                if conf >= 0.5:
                     detections.append({
                         'bbox': [int(x1), int(y1), int(x2), int(y2)],
                         'confidence': float(conf)
@@ -166,20 +167,24 @@ class PotholeDetectionService:
             
             # If potholes detected, save the frame
             if detections:
-                self.new_pothole_detection = True
-                self.latest_detection_frame = frame.copy()
-                self.latest_detections = detections  # Store detections for queue
                 self.detection_count += 1
 
                 # TODO: NATHAN MAKE API ENDPOINT CALL TO image and send detections (make sure to send timestamp)
                 self.image_id_response = self.send_frame_to_api(frame)
                 print(f"API response, image id: {self.image_id_response}")
 
+                detection_ids = []
                 for det in detections:
                     x1, y1, x2, y2 = det['bbox']
                     confidence = det['confidence']
                     detection_id_response = self.send_detection_results_to_api(self.image_id_response, x1, y1, x2, y2, confidence)
                     print(f"API response, detection id: {detection_id_response}")
+                    detection_ids.append(detection_id_response)
+                    det['detection_id'] = detection_id_response  # Store detection ID with the detection
+
+                self.new_pothole_detection = True
+                self.latest_detection_frame = frame.copy()
+                self.latest_detections = detections  # Store detections for queue (now includes detection_ids)
 
                 # DEBUG CODE
                 if debug_mode:
@@ -484,19 +489,33 @@ if __name__ == '__main__':
             print(f"Error processing detection: {e}")
             return None, None, None
     
-    def send_results_to_api(areas, depths, filtered_values):
+    def send_results_to_api(areas, depths, filtered_values, detections):
         for i in range(len(areas)):
+            detection_id = detections[i].get('detection_id')
+            if detection_id is None:
+                print(f"Warning: No detection_id found for detection {i}")
+                continue
+
+            int_val_filtered_value = 1 if filtered_values[i] else 0
+                
             payload = {
                 'areaScore': areas[i],
                 'depthScore': depths[i],
-                'falsePositive': filtered_values[i]
+                'falsePositive': int_val_filtered_value
             }
-            response = requests.post(f'http://localhost:5173/api/detections/{i}', json=payload)
-            print(f"Sent AI processing results to API detection ID: {i}, Status Code: {response.status_code}")
-            print(f"Image ID: {response.json().get('image_id')}, Detection ID: {response.json().get('detection_id')}")
+            response = requests.patch(f'http://localhost:5173/api/detections/{detection_id}', json=payload)
+            print(f"Sent AI processing results to API detection ID: {detection_id}, Status Code: {response.status_code}")
+            
+            if response.status_code == 200:
+                try:
+                    response_data = response.json()
+                    print(f"Image ID: {response_data.get('imageId')}, Detection ID: {response_data.get('id')}")
+                except:
+                    print(f"Could not parse JSON response: {response.text}")
+            else:
+                print(f"API request failed: {response.text}")
 
-            response = requests.post('http://localhost:5173/api/detections', json=payload)
-            return response.json().get("detection_id")
+        return True
 
 
     # Process 1: Pothole detection from webRTC stream from CSI camera on raspi
@@ -522,6 +541,8 @@ if __name__ == '__main__':
             while not detection_queue.empty() and len(futures) < 5:
                 frame, detections = detection_queue.get()
                 future = executor.submit(process_detection, frame, detections)
+                # Store the detections with the future so we can access them later
+                future.detections = detections
                 futures.append(future)
 
             # Check for completed futures
@@ -530,7 +551,9 @@ if __name__ == '__main__':
                     results = future.result()
                     areas, depths, filtered_values = results
                     # TODO: NATHAN make API call to send results per detection ID
-
+                    if areas is not None and depths is not None and filtered_values is not None:
+                        # Use the detections stored with this specific future
+                        send_results_to_api(areas, depths, filtered_values, future.detections)
 
                     futures.remove(future)
 
