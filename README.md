@@ -95,7 +95,7 @@ The following files will be saved after running the pipeline for a given image. 
 
 
 ### Pothole Detection Deployment
-Since this project is integrated with an Autonomous Pothole Detection Rover, the pothole detection model is deployed and runs on a Raspberry Pi. There are files under `modules/ai_models/pothole_detection/deployment` which are related to deploying the pothole detection model on hardware components. 
+Since this project is integrated with an Autonomous Pothole Detection Rover, the pothole detection model is deployed and runs on a Raspberry Pi. There are files under `modules/ai_models/pothole_detection/deployment` which are related to deploying the pothole detection model on hardware components. The actual pothole app runs off-site on SW when the rover navigates. The deployed app is under `docker/main.py` and runs in a docker container.
 
 ## Disclaimer
 This project is for non-commercial use only. It utilizes the YOLOv5, DeepLabV3+, and Depth-Anything-V2 models.
