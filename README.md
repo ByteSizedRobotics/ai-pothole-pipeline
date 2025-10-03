@@ -101,10 +101,12 @@ Since this project is integrated with an Autonomous Pothole Detection Rover, the
 Within the /docker folder, there is a main.py and a Dockerfile which is used in the autonomous pothole detection rover project. The goal is to startup a docker container running off-site on the software while the rover is navigating autonomously and sending back a continuous video stream. This video stream is passed to this main script which performs the AI analysis pipeline stages in real-time. The detection results in the input frames are written directly to the database via API endpoints to allow the user to view the data on the UI. The following commands can be used to build/run the Docker container. NOTE: this docker container requires the IP address of the raspi running on the rover which sends back the video stream, as well as the WebRTC port number to connect to the live stream.
 ```bash
 # BUILD
-docker build -t pothole-detection-app docker/
+docker build -t ai-pothole-app docker/
+docker tag ai-pothole-app:latest ai-pothole-app:latest
+docker push bytesizedrobotics/ai-pothole-app:latest
 
 # Run without optional flags
-docker run --gpus all -it --name pothole-detection-app-container pothole-detection-app 
+docker run --gpus all -it --name ai-pothole-app ai-pothole-app
 
 # Run with IP and WebRTC flags
 docker run --gpus all -it --name pothole-detection-app-container pothole-detection-app -e RASPI_IP=... -e WEBRTC_PORT=...
