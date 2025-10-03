@@ -19,12 +19,14 @@ import aimodels.DeepLabV3Plus.network as network
 import aimodels.DeepLabV3Plus.utils as utils
 from aimodels.DeepLabV3Plus.datasets import Cityscapes
 
-debug_mode = True
+debug_mode = False
 
-# TODO: NATHAN pass in webRTC url, 
+# rover_id = os.getenv("ROVER_ID", "default_rover")
+raspi_ip = os.getenv("RASPI_IP", "127.0.0.1")
+webrtc_port = os.getenv("WEBRTC_PORT", "8765")
 
 class PotholeDetectionService:
-    def __init__(self, model_path='aimodels/pothole_model_2025_03_01', webrtc_uri="ws://100.85.202.20:8765"): # TODO: NATHAN change this to raspi IP address (pass it into the docker container upon creation)
+    def __init__(self, model_path='aimodels/pothole_model_2025_03_01', webrtc_uri=None):
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu') # TODO: NATHAN make sure GPU works
         self.model = torch.hub.load('ultralytics/yolov5', 'custom', path=model_path).to(self.device)
         self.webrtc_uri = webrtc_uri
@@ -46,49 +48,53 @@ class PotholeDetectionService:
         print(f"Pothole detection service initialized on device: {self.device}")
 
     async def connect_to_webrtc(self):
-        """Connect to ROS2 WebRTC publisher and receive video stream"""
-        try:
-            # Connect to WebRTC signaling server
-            async with websockets.connect(self.webrtc_uri) as websocket:
-                print("Connected to WebRTC signaling server")
-                
-                # Create peer connection
-                self.pc = RTCPeerConnection()
-                
-                @self.pc.on("track")
-                def on_track(track):
-                    print(f"Track received: {track.kind}")
-                    if track.kind == "video":
-                        asyncio.create_task(self.receive_video_frames(track))
+        """Connect to ROS2 WebRTC publisher and receive video stream with retry logic"""
+        while True:
+            try:
+                # Connect to WebRTC signaling server
+                async with websockets.connect(self.webrtc_uri) as websocket:
+                    print("Connected to WebRTC signaling server")
+                    
+                    # Create peer connection
+                    self.pc = RTCPeerConnection()
+                    
+                    @self.pc.on("track")
+                    def on_track(track):
+                        print(f"Track received: {track.kind}")
+                        if track.kind == "video":
+                            asyncio.create_task(self.receive_video_frames(track))
 
-                # Create offer
-                self.pc.addTransceiver("video", direction="recvonly")
-                offer = await self.pc.createOffer()
-                await self.pc.setLocalDescription(offer)
-                
-                # Send offer to ROS2 node
-                await websocket.send(json.dumps({
-                    "type": "offer",
-                    "sdp": self.pc.localDescription.sdp
-                }))
-                
-                # Wait for answer
-                async for message in websocket:
-                    data = json.loads(message)
-                    if data.get("type") == "answer":
-                        answer = RTCSessionDescription(sdp=data["sdp"], type="answer")
-                        await self.pc.setRemoteDescription(answer)
-                        print("WebRTC connection established")
-                        break
-                    elif data.get("type") == "ice-candidate":
-                        # Handle ICE candidates if needed
-                        pass
-                                    
-                # Keep connection alive
-                await asyncio.Future()  # Run forever
-                
-        except Exception as e:
-            print(f"WebRTC connection error: {e}")
+                    # Create offer
+                    self.pc.addTransceiver("video", direction="recvonly")
+                    offer = await self.pc.createOffer()
+                    await self.pc.setLocalDescription(offer)
+                    
+                    # Send offer to ROS2 node
+                    await websocket.send(json.dumps({
+                        "type": "offer",
+                        "sdp": self.pc.localDescription.sdp
+                    }))
+                    
+                    # Wait for answer
+                    async for message in websocket:
+                        data = json.loads(message)
+                        if data.get("type") == "answer":
+                            answer = RTCSessionDescription(sdp=data["sdp"], type="answer")
+                            await self.pc.setRemoteDescription(answer)
+                            print("WebRTC connection established")
+                            break
+                        elif data.get("type") == "ice-candidate":
+                            # Handle ICE candidates if needed
+                            pass
+                                        
+                    # Keep connection alive
+                    await asyncio.Future()  # Run forever
+                    
+            except Exception as e:
+                print(f"WebRTC connection error: {e}")
+                print("Retrying WebRTC connection in 5 seconds...")
+                await asyncio.sleep(5)
+                continue
 
     async def receive_video_frames(self, track):
         """Continuously receive video frames from WebRTC stream - separate from processing"""
@@ -169,7 +175,6 @@ class PotholeDetectionService:
             if detections:
                 self.detection_count += 1
 
-                # TODO: NATHAN MAKE API ENDPOINT CALL TO image and send detections (make sure to send timestamp)
                 self.image_id_response = self.send_frame_to_api(frame)
                 print(f"API response, image id: {self.image_id_response}")
 
@@ -245,7 +250,7 @@ class SeverityCalculationService():
 
         #initialize depth estimation model
         self.depth_model = DepthAnythingV2(encoder='vitl', features=256, out_channels=[256, 512, 1024, 1024])
-        self.depth_model.load_state_dict(torch.load('aimodels/DepthAnythingV2/checkpoints/depth_anything_v2_vitl.pth',  map_location=torch.device('cuda' if torch.cuda.is_available() else 'cpu'))) # TODO: NATHAN change this to gpu?
+        self.depth_model.load_state_dict(torch.load('aimodels/DepthAnythingV2/checkpoints/depth_anything_v2_vitl.pth',  map_location=torch.device('cuda' if torch.cuda.is_available() else 'cpu')))
         self.depth_model = self.depth_model.to(self.device).eval()
 
     def estimate_area(self):
@@ -351,7 +356,7 @@ class FilteringService():
     def __init__(self, image, detections):
         self.image = image
         self.detections = detections
-        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu') # TODO: NATHAN verify its running on GPU
+        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         self.num_classes = 19
         self.decode_fn = Cityscapes.decode_target
 
@@ -430,7 +435,7 @@ class FilteringService():
 
             if percentage_pixels_on_road >= min_road_threshold:
                 is_on_road = True
-            elif confidence >= 0.80 and percentage_pixels_on_road >= 0.30: # TODO: NATHAN update maybe this elif check not needed
+            elif confidence >= 0.80 and percentage_pixels_on_road >= 0.30:
                 is_on_road = True
             elif confidence >= 0.75 and percentage_pixels_on_vegetation >= 0.5 and percentage_pixels_on_road >= 0.05:
                 is_on_road = True
@@ -519,7 +524,9 @@ if __name__ == '__main__':
 
 
     # Process 1: Pothole detection from webRTC stream from CSI camera on raspi
-    potholeDetectionService = PotholeDetectionService()
+    webrtc_uri = f"ws://{raspi_ip}:{webrtc_port}"
+    print(f"Connecting to WebRTC at: {webrtc_uri}")
+    potholeDetectionService = PotholeDetectionService(webrtc_uri=webrtc_uri)
     detection_thread = threading.Thread(target=potholeDetectionService.run, daemon=True)
     detection_thread.start()
 
@@ -550,7 +557,6 @@ if __name__ == '__main__':
                 if future.done():
                     results = future.result()
                     areas, depths, filtered_values = results
-                    # TODO: NATHAN make API call to send results per detection ID
                     if areas is not None and depths is not None and filtered_values is not None:
                         # Use the detections stored with this specific future
                         send_results_to_api(areas, depths, filtered_values, future.detections)

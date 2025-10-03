@@ -1,9 +1,30 @@
+# Core ML and Computer Vision (Required by main.py)
 torch>=2.0.0
 torchvision>=0.15.0
 opencv-python>=4.8.0
 numpy>=1.24.0
-flask>=2.3.0
+
+# Web framework and networking (Required for WebRTC and API calls)
 websockets>=11.0.0
 aiortc>=1.6.0
 av>=10.0.0
+requests>=2.31.0
+
+# Object detection and AI models (Required for YOLOv5 and custom models)
 ultralytics>=8.0.0
+
+# For DepthAnythingV2 and DeepLabV3Plus models
+timm>=0.9.0
+
+# Image processing and transformations
+Pillow>=10.0.0
+
+# Data handling and utilities
+scipy>=1.11.0
+tqdm>=4.65.0
+
+# For concurrent processing (ThreadPoolExecutor, queue)
+# These are built-in Python modules, no installation needed
+
+# For asyncio, threading, time, os, json, warnings
+# These are built-in Python modules, no installation needed
