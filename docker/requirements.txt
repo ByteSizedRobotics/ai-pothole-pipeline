@@ -3,6 +3,7 @@ torch>=2.0.0
 torchvision>=0.15.0
 opencv-python>=4.8.0
 numpy>=1.24.0
+gitpython>=3.1.30
 
 # Web framework and networking (Required for WebRTC and API calls)
 websockets>=11.0.0
@@ -11,7 +12,7 @@ av>=10.0.0
 requests>=2.31.0
 
 # Object detection and AI models (Required for YOLOv5 and custom models)
-ultralytics>=8.0.0
+ultralytics>=8.2.34  # https://ultralytics.com
 
 # For DepthAnythingV2 and DeepLabV3Plus models
 timm>=0.9.0
@@ -21,10 +22,32 @@ Pillow>=10.0.0
 
 # Data handling and utilities
 scipy
-tqdm>=4.65.0
+tqdm==4.67.1
 
-# For concurrent processing (ThreadPoolExecutor, queue)
-# These are built-in Python modules, no installation needed
+# Visualization (required by some models)
+visdom==0.2.4
 
-# For asyncio, threading, time, os, json, warnings
-# These are built-in Python modules, no installation needed
+# Optional: Flask for local API/app
+Flask
+
+# Optional: FastAPI and Uvicorn for async API
+fastapi==0.115.8
+uvicorn
+
+# Optional: pandas for data manipulation
+pandas
+
+# Optional: matplotlib and seaborn for plotting
+matplotlib
+seaborn
+
+PyYAML>=5.3.1
+requests>=2.32.2
+thop>=0.1.1  # FLOPs computation
+psutil  # system resources
+
+# gradio_imageslider
+# gradio>=5.11.0
+
+# Optional: albumentations for image augmentation
+albumentations
