@@ -20,7 +20,7 @@ timm>=0.9.0
 Pillow>=10.0.0
 
 # Data handling and utilities
-scipy>=1.11.0
+scipy
 tqdm>=4.65.0
 
 # For concurrent processing (ThreadPoolExecutor, queue)
