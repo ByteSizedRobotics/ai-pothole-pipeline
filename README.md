@@ -106,7 +106,7 @@ docker tag ai-pothole-app:latest ai-pothole-app:latest
 docker push bytesizedrobotics/ai-pothole-app:latest
 
 # Run without optional flags
-docker run --gpus all -it --name ai-pothole-app ai-pothole-app
+docker run --gpus all -it --name ai-pothole-app bytesizedrobotics/ai-pothole-app:latest
 
 # Run with IP and WebRTC flags
 docker run --gpus all -it --name pothole-detection-app-container pothole-detection-app -e RASPI_IP=... -e WEBRTC_PORT=...
