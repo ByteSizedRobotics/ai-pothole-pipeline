@@ -102,7 +102,7 @@ Within the /docker folder, there is a main.py and a Dockerfile which is used in 
 ```bash
 # BUILD
 docker build -t ai-pothole-app docker/
-docker tag ai-pothole-app:latest ai-pothole-app:latest
+docker tag ai-pothole-app:latest bytesizedrobotics/ai-pothole-app:latest
 docker push bytesizedrobotics/ai-pothole-app:latest
 
 # Run without optional flags
