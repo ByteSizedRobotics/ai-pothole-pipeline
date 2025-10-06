@@ -1,3 +1,5 @@
+import platform
+import pathlib
 import torch
 import cv2
 import asyncio
@@ -22,11 +24,21 @@ from aimodels.DeepLabV3Plus.datasets import Cityscapes
 debug_mode = False
 
 # rover_id = os.getenv("ROVER_ID", "default_rover")
-raspi_ip = os.getenv("RASPI_IP", "127.0.0.1")
+raspi_ip = os.getenv("RASPI_IP", "100.85.202.20")
 webrtc_port = os.getenv("WEBRTC_PORT", "8765")
 
 class PotholeDetectionService:
-    def __init__(self, model_path='aimodels/pothole_model_2025_03_01', webrtc_uri=None):
+    def __init__(self, webrtc_uri=None):
+    # def __init__(self, model_path='aimodels/pothole_model_2025_03_01', webrtc_uri=None):
+        # NEED THIS OR ELSE DOESN"T WORK ON LINUX
+        # Need to force the load to be done on LINUX
+        # SOLUTION found on https://github.com/ultralytics/yolov5/issues/12911
+        if platform.system() == 'Windows':
+            pathlib.PosixPath = pathlib.WindowsPath
+        else:
+            pathlib.WindowsPath = pathlib.PosixPath
+        
+        model_path = str(pathlib.Path("aimodels/pothole_model_2025_03_01"))
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu') # TODO: NATHAN make sure GPU works
         self.model = torch.hub.load('ultralytics/yolov5', 'custom', path=model_path).to(self.device)
         self.webrtc_uri = webrtc_uri
@@ -58,6 +70,11 @@ class PotholeDetectionService:
                     # Create peer connection
                     self.pc = RTCPeerConnection()
                     
+                    # Track state changes for debugging
+                    @self.pc.on("connectionstatechange")
+                    async def on_connectionstatechange():
+                        print(f"Connection state: {self.pc.connectionState}")
+                    
                     @self.pc.on("track")
                     def on_track(track):
                         print(f"Track received: {track.kind}")
@@ -75,21 +92,52 @@ class PotholeDetectionService:
                         "sdp": self.pc.localDescription.sdp
                     }))
                     
-                    # Wait for answer
+                    print("Offer sent, waiting for answer and ICE candidates...")
+                    
+                    # Wait for answer and ICE candidates
+                    answer_received = False
                     async for message in websocket:
                         data = json.loads(message)
+                        
                         if data.get("type") == "answer":
                             answer = RTCSessionDescription(sdp=data["sdp"], type="answer")
                             await self.pc.setRemoteDescription(answer)
-                            print("WebRTC connection established")
+                            print("Answer received and set")
+                            answer_received = True
+                            # Don't break here - continue to process ICE candidates
+                            
+                        elif data.get("type") == "ice-candidate" and data.get("candidate"):
+                            # Handle ICE candidates from the server
+                            from aiortc import RTCIceCandidate
+                            candidate = data["candidate"]
+                            ice_candidate = RTCIceCandidate(
+                                sdpMid=candidate.get("sdpMid"),
+                                sdpMLineIndex=candidate.get("sdpMLineIndex"),
+                                candidate=candidate.get("candidate")
+                            )
+                            await self.pc.addIceCandidate(ice_candidate)
+                            print(f"Added ICE candidate")
+                        
+                        # Once we have the answer and connection is established, break to keep-alive loop
+                        if answer_received and self.pc.connectionState in ['connected', 'completed']:
+                            print("WebRTC connection fully established!")
                             break
-                        elif data.get("type") == "ice-candidate":
-                            # Handle ICE candidates if needed
-                            pass
-                                        
-                    # Keep connection alive
-                    await asyncio.Future()  # Run forever
                     
+                    # Keep connection alive with periodic health checks
+                    try:
+                        while True:
+                            await asyncio.sleep(1)  # Keep alive without blocking
+                            # Monitor connection health
+                            if self.pc.connectionState in ['failed', 'closed', 'disconnected']:
+                                print(f"Connection state changed to: {self.pc.connectionState}, reconnecting...")
+                                break
+                    except asyncio.CancelledError:
+                        print("WebRTC connection cancelled")
+                        break
+                    
+            except websockets.exceptions.ConnectionClosed:
+                print("WebSocket connection closed, retrying in 5 seconds...")
+                await asyncio.sleep(5)
             except Exception as e:
                 print(f"WebRTC connection error: {e}")
                 print("Retrying WebRTC connection in 5 seconds...")
@@ -98,7 +146,8 @@ class PotholeDetectionService:
 
     async def receive_video_frames(self, track):
         """Continuously receive video frames from WebRTC stream - separate from processing"""
-        # frame_count = 0
+        frame_count = 0
+        print("Started receiving video frames from WebRTC track")
         while True:
             try:
                 frame = await track.recv()
@@ -109,13 +158,14 @@ class PotholeDetectionService:
                 with self.frame_lock:
                     self.current_frame = img.copy()
                 
-                # frame_count += 1
+                frame_count += 1
                 # if frame_count % 30 == 0:  # Log every 30 frames to avoid spam
-                #     print(f"Received {frame_count} frames")
+                    # print(f"Received {frame_count} frames, shape: {img.shape}")
                 
             except Exception as e:
                 print(f"Error receiving frame: {e}")
                 break
+        print("Stopped receiving video frames")
 
     def get_latest_frame(self):
         """Thread-safe method to get the latest frame"""
@@ -199,6 +249,7 @@ class PotholeDetectionService:
             
             self.processing_frame = False
             time.sleep(0.1)  # Small delay of 0.1 seconds
+
     def detection_worker(self):
         """Separate thread worker for processing frames for detection"""
         print("Detection worker thread started")
@@ -208,7 +259,10 @@ class PotholeDetectionService:
             if not self.processing_frame:
                 frame = self.get_latest_frame()
                 if frame is not None:
+                    # print(f"Processing frame for detection, shape: {frame.shape}")
                     self.process_frame_for_detection(frame)
+                    # save frame
+                    # cv2.imwrite(f"frame_{self.detection_count}.jpg", frame)
             
             # Control processing rate - process at most 10 FPS to avoid overwhelming
             time.sleep(0.1)
