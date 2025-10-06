@@ -108,8 +108,9 @@ docker push bytesizedrobotics/ai-pothole-app:latest
 # Run without optional flags
 docker run --gpus all -it --name ai-pothole-app bytesizedrobotics/ai-pothole-app:latest
 
-# Run with IP and WebRTC flags
-docker run --gpus all -it --name pothole-detection-app-container pothole-detection-app -e RASPI_IP=... -e WEBRTC_PORT=...
+# Run with IP and WebRTC flags (NOTE assumes APIs are running on same device as the docker container (need to know the port tho)
+docker run --gpus all -it --name pothole-detection-app-container pothole-detection-app
+-e RASPI_IP=... -e WEBRTC_PORT=... -e API_PORT=3000
 ```
 The links below provide the repostitories related to the autonomous pothole detection rover project:
 - [Code running on the raspberry pi for rover operation](https://github.com/ByteSizedRobotics/autonomous-navigation)
