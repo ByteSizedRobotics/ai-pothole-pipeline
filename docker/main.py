@@ -26,6 +26,7 @@ debug_mode = False
 # rover_id = os.getenv("ROVER_ID", "default_rover")
 raspi_ip = os.getenv("RASPI_IP", "100.85.202.20")
 webrtc_port = os.getenv("WEBRTC_PORT", "8765")
+api_port = os.getenv("API_PORT", "5173")
 
 class PotholeDetectionService:
     def __init__(self, webrtc_uri=None):
@@ -185,7 +186,7 @@ class PotholeDetectionService:
         }
 
         # Make the POST request
-        response = requests.post('http://localhost:5173/api/images', files=files)
+        response = requests.post(f'http://host.docker.internal:{api_port}/api/images', files=files)
         print("Sent image/frame to API, Status Code:", response.status_code)
         self.image_id = response.json().get('image_id')
         return self.image_id
@@ -196,7 +197,7 @@ class PotholeDetectionService:
             "confidence": confidence,
             "bbox": [int(x1), int(y1), int(x2), int(y2)]
         }
-        response = requests.post('http://localhost:5173/api/detections', json=payload)
+        response = requests.post(f'http://host.docker.internal:{api_port}/api/detections', json=payload)
         print("Sent detection results to API, Status Code:", response.status_code)
         return response.json().get('detection_id')
 
@@ -562,7 +563,7 @@ if __name__ == '__main__':
                 'depthScore': depths[i],
                 'falsePositive': int_val_filtered_value
             }
-            response = requests.patch(f'http://localhost:5173/api/detections/{detection_id}', json=payload)
+            response = requests.patch(f'http://host.docker.internal:{api_port}/api/detections/{detection_id}', json=payload)
             print(f"Sent AI processing results to API detection ID: {detection_id}, Status Code: {response.status_code}")
             
             if response.status_code == 200:

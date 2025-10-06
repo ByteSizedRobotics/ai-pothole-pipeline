@@ -58,6 +58,7 @@ RUN mkdir -p aimodels/DepthAnythingV2/checkpoints \
 # These can be overridden when running the container with -e flag
 ENV RASPI_IP=100.85.202.20
 ENV WEBRTC_PORT=8765
+ENV API_PORT=5173
 
 # Expose any ports if needed (adjust as necessary)
 # EXPOSE 5000 8765
