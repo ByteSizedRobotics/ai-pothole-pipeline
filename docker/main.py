@@ -28,6 +28,7 @@ raspi_ip = os.getenv("RASPI_IP", "100.85.202.20")
 webrtc_port = os.getenv("WEBRTC_PORT", "8765")
 api_port = os.getenv("API_PORT", "5173")
 api_ip = os.getenv("API_IP", "host.docker.internal")
+verbose = os.getenv("VERBOSE", "false").lower() == "true"
 
 class PotholeDetectionService:
     def __init__(self, webrtc_uri=None, rover_id=None):
@@ -63,7 +64,8 @@ class PotholeDetectionService:
 
         self.image_id = None # DB image ID from API
         
-        print(f"Pothole detection service initialized on device: {self.device}")
+        if verbose:
+            print(f"Pothole detection service initialized on device: {self.device}")
 
     async def connect_to_webrtc(self):
         """Connect to ROS2 WebRTC publisher and receive video stream with retry logic"""
@@ -79,6 +81,8 @@ class PotholeDetectionService:
                     # Track state changes for debugging
                     @self.pc.on("connectionstatechange")
                     async def on_connectionstatechange():
+                        if verbose:
+                            print(f"Connection state: {self.pc.connectionState}")
                         print(f"Connection state: {self.pc.connectionState}")
                     
                     @self.pc.on("track")
@@ -122,7 +126,8 @@ class PotholeDetectionService:
                                 candidate=candidate.get("candidate")
                             )
                             await self.pc.addIceCandidate(ice_candidate)
-                            print(f"Added ICE candidate")
+                            if verbose:
+                                print(f"Added ICE candidate")
                         
                         # Once we have the answer and connection is established, break to keep-alive loop
                         if answer_received and self.pc.connectionState in ['connected', 'completed']:
@@ -153,7 +158,8 @@ class PotholeDetectionService:
     async def receive_video_frames(self, track):
         """Continuously receive video frames from WebRTC stream - separate from processing"""
         frame_count = 0
-        print("Started receiving video frames from WebRTC track")
+        if verbose:
+            print("Started receiving video frames from WebRTC track")
         while True:
             try:
                 frame = await track.recv()
@@ -169,9 +175,11 @@ class PotholeDetectionService:
                     # print(f"Received {frame_count} frames, shape: {img.shape}")
                 
             except Exception as e:
-                print(f"Error receiving frame: {e}")
+                if verbose:
+                    print(f"Error receiving frame: {e}")
                 break
-        print("Stopped receiving video frames")
+        if verbose:
+            print("Stopped receiving video frames")
 
     def get_latest_frame(self):
         """Thread-safe method to get the latest frame"""
@@ -181,7 +189,8 @@ class PotholeDetectionService:
     def fetch_latest_path_id(self):
         """Fetch the latest path ID from the API for this rover"""
         if self.rover_id is None:
-            print("ERROR: rover_id is None, cannot fetch latest path_id")
+            if verbose:
+                print("ERROR: rover_id is None, cannot fetch latest path_id")
             return None
         
         try:
@@ -196,21 +205,26 @@ class PotholeDetectionService:
                         old_path_id = self.path_id
                         self.path_id = new_path_id
                         if new_path_id is not None:
-                            print(f"Updated path_id: {old_path_id} -> {new_path_id}")
+                            if verbose:
+                                print(f"Updated path_id: {old_path_id} -> {new_path_id}")
                         else:
-                            print(f"No active path found for rover {self.rover_id}")
+                            if verbose:
+                                print(f"No active path found for rover {self.rover_id}")
                 
                 return new_path_id
             else:
-                print(f"Failed to fetch latest path_id: HTTP {response.status_code}")
+                if verbose:
+                    print(f"Failed to fetch latest path_id: HTTP {response.status_code}")
                 return None
         except Exception as e:
-            print(f"Error fetching latest path_id: {e}")
+            if verbose:
+                print(f"Error fetching latest path_id: {e}")
             return None
     
     def path_id_polling_worker(self):
         """Background thread to periodically poll for the latest path_id"""
-        print("Path ID polling worker started")
+        if verbose:
+            print("Path ID polling worker started")
         
         # Fetch initial path_id
         self.fetch_latest_path_id()
@@ -223,7 +237,8 @@ class PotholeDetectionService:
         # Encode frame as JPEG in memory
         success, encoded_image = cv2.imencode('.jpg', frame)
         if not success:
-            print("Failed to encode image")
+            if verbose:
+                print("Failed to encode image")
             return None
 
         # Temporary filename - server will rename it with proper path_id and image_id
@@ -242,19 +257,23 @@ class PotholeDetectionService:
         if current_path_id is not None:
             data['pathId'] = str(current_path_id)
         else:
-            print("WARNING: path_id is None, image will not be saved")
+            if verbose:
+                print("WARNING: path_id is None, image will not be saved")
             return None
 
         # Make the POST request
         response = requests.post(f'http://{api_ip}:{api_port}/api/images', files=files, data=data)
-        print(f"Sent image/frame to API (path_id={current_path_id}), Status Code: {response.status_code}")
+        if verbose:
+            print(f"Sent image/frame to API (path_id={current_path_id}), Status Code: {response.status_code}")
         
         if response.status_code == 201:
             self.image_id = response.json().get('image_id')
-            print(f"Image saved with ID: {self.image_id}")
+            if verbose:
+                print(f"Image saved with ID: {self.image_id}")
             return self.image_id
         else:
-            print(f"Error from API: {response.text}")
+            if verbose:
+                print(f"Error from API: {response.text}")
             return None
     
     def send_detection_results_to_api(self, image_id, x1, y1, x2, y2, confidence):
@@ -264,7 +283,8 @@ class PotholeDetectionService:
             "bbox": [int(x1), int(y1), int(x2), int(y2)]
         }
         response = requests.post(f'http://{api_ip}:{api_port}/api/detections', json=payload)
-        print("Sent detection results to API, Status Code:", response.status_code)
+        if verbose:
+            print("Sent detection results to API, Status Code:", response.status_code)
         return response.json().get('detection_id')
 
     def process_frame_for_detection(self, frame):
@@ -293,14 +313,16 @@ class PotholeDetectionService:
                 self.detection_count += 1
 
                 self.image_id_response = self.send_frame_to_api(frame)
-                print(f"API response, image id: {self.image_id_response}")
+                if verbose:
+                    print(f"API response, image id: {self.image_id_response}")
 
                 detection_ids = []
                 for det in detections:
                     x1, y1, x2, y2 = det['bbox']
                     confidence = det['confidence']
                     detection_id_response = self.send_detection_results_to_api(self.image_id_response, x1, y1, x2, y2, confidence)
-                    print(f"API response, detection id: {detection_id_response}")
+                    if verbose:
+                        print(f"API response, detection id: {detection_id_response}")
                     detection_ids.append(detection_id_response)
                     det['detection_id'] = detection_id_response  # Store detection ID with the detection
 
@@ -312,14 +334,16 @@ class PotholeDetectionService:
                 if debug_mode:
                     filename = f"pothole_detection_{self.detection_count}.jpg"
                     cv2.imwrite(filename, frame)
-                    print(f"Pothole detected! Saved frame as {filename} (Total detections: {self.detection_count})")
+                    if verbose:
+                        print(f"Pothole detected! Saved frame as {filename} (Total detections: {self.detection_count})")
             
             self.processing_frame = False
             time.sleep(0.1)  # Small delay of 0.1 seconds
 
     def detection_worker(self):
         """Separate thread worker for processing frames for detection"""
-        print("Detection worker thread started")
+        if verbose:
+            print("Detection worker thread started")
         
         while True:
             # Get latest frame if detection is not busy
@@ -437,7 +461,8 @@ class SeverityCalculationService():
             
             # Check if cropped pothole is valid
             if cropped_pothole.size == 0:
-                print(f"Warning: Empty cropped pothole for bbox {bbox}")
+                if verbose:
+                    print(f"Warning: Empty cropped pothole for bbox {bbox}")
                 pothole_depths.append(0.0)
                 continue
 
@@ -515,7 +540,8 @@ class FilteringService():
             # print(f"Loaded segmentation model from aimodels/DeepLabV3Plus/checkpoints/deeplabv3plus_resnet101_cityscapes_os16.pth")
             # del checkpoint
         else:
-            print("[!] Warning: No checkpoint found for segmentation model")
+            if verbose:
+                print("[!] Warning: No checkpoint found for segmentation model")
         
         self.model = nn.DataParallel(self.model)
         self.model.to(self.device)
@@ -609,7 +635,8 @@ if __name__ == '__main__':
         try:
             t1 = threading.Thread(target=severity_task)
             t2 = threading.Thread(target=filtering_task)
-            print("Starting severity and filtering threads...")
+            if verbose:
+                print("Starting severity and filtering threads...")
             t1.start()
             t2.start()
             t1.join()
@@ -623,7 +650,8 @@ if __name__ == '__main__':
         for i in range(len(areas)):
             detection_id = detections[i].get('detection_id')
             if detection_id is None:
-                print(f"Warning: No detection_id found for detection {i}")
+                if verbose:
+                    print(f"Warning: No detection_id found for detection {i}")
                 continue
 
             int_val_filtered_value = 1 if filtered_values[i] else 0
@@ -634,16 +662,20 @@ if __name__ == '__main__':
                 'falsePositive': int_val_filtered_value
             }
             response = requests.patch(f'http://{api_ip}:{api_port}/api/detections/{detection_id}', json=payload)
-            print(f"Sent AI processing results to API detection ID: {detection_id}, Status Code: {response.status_code}")
+            if verbose:
+                print(f"Sent AI processing results to API detection ID: {detection_id}, Status Code: {response.status_code}")
             
             if response.status_code == 200:
                 try:
                     response_data = response.json()
-                    print(f"Image ID: {response_data.get('imageId')}, Detection ID: {response_data.get('id')}")
+                    if verbose:
+                        print(f"Image ID: {response_data.get('imageId')}, Detection ID: {response_data.get('id')}")
                 except:
-                    print(f"Could not parse JSON response: {response.text}")
+                    if verbose:
+                        print(f"Could not parse JSON response: {response.text}")
             else:
-                print(f"API request failed: {response.text}")
+                if verbose:
+                    print(f"API request failed: {response.text}")
 
         return True
 
@@ -673,7 +705,8 @@ if __name__ == '__main__':
                 detections = potholeDetectionService.latest_detections
                 detection_queue.put((frame, detections))
                 potholeDetectionService.new_pothole_detection = False
-                print(f"Added detection to queue. Queue size: {detection_queue.qsize()}")
+                if verbose:
+                    print(f"Added detection to queue. Queue size: {detection_queue.qsize()}")
 
             # Submit tasks for all items in the queue (up to 5 at a time)
             while not detection_queue.empty() and len(futures) < 5:
