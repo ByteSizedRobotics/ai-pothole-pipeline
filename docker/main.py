@@ -23,14 +23,14 @@ from aimodels.DeepLabV3Plus.datasets import Cityscapes
 
 debug_mode = False
 
-# rover_id = os.getenv("ROVER_ID", "default_rover")
+rover_id = os.getenv("ROVER_ID", "1")
 raspi_ip = os.getenv("RASPI_IP", "100.85.202.20")
 webrtc_port = os.getenv("WEBRTC_PORT", "8765")
 api_port = os.getenv("API_PORT", "5173")
 api_ip = os.getenv("API_IP", "host.docker.internal")
 
 class PotholeDetectionService:
-    def __init__(self, webrtc_uri=None):
+    def __init__(self, webrtc_uri=None, rover_id=None):
     # def __init__(self, model_path='aimodels/pothole_model_2025_03_01', webrtc_uri=None):
         # NEED THIS OR ELSE DOESN"T WORK ON LINUX
         # Need to force the load to be done on LINUX
@@ -44,6 +44,10 @@ class PotholeDetectionService:
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu') # TODO: NATHAN make sure GPU works
         self.model = torch.hub.load('ultralytics/yolov5', 'custom', path=model_path).to(self.device)
         self.webrtc_uri = webrtc_uri
+        self.rover_id = rover_id
+        self.path_id = None  # Will be fetched from API
+        self.path_id_lock = threading.Lock()  # Thread-safe path_id updates
+        self.path_id_poll_interval = 30  # Poll for new path every 30 seconds
         
         # Video stream variables
         self.current_frame = None
@@ -173,6 +177,47 @@ class PotholeDetectionService:
         """Thread-safe method to get the latest frame"""
         with self.frame_lock:
             return self.current_frame.copy() if self.current_frame is not None else None
+    
+    def fetch_latest_path_id(self):
+        """Fetch the latest path ID from the API for this rover"""
+        if self.rover_id is None:
+            print("ERROR: rover_id is None, cannot fetch latest path_id")
+            return None
+        
+        try:
+            response = requests.get(f'http://{api_ip}:{api_port}/api/rovers/{self.rover_id}/latest-path', timeout=5)
+            if response.status_code == 200:
+                data = response.json()
+                new_path_id = data.get('path_id')
+                
+                # Thread-safe update of path_id
+                with self.path_id_lock:
+                    if new_path_id != self.path_id:
+                        old_path_id = self.path_id
+                        self.path_id = new_path_id
+                        if new_path_id is not None:
+                            print(f"Updated path_id: {old_path_id} -> {new_path_id}")
+                        else:
+                            print(f"No active path found for rover {self.rover_id}")
+                
+                return new_path_id
+            else:
+                print(f"Failed to fetch latest path_id: HTTP {response.status_code}")
+                return None
+        except Exception as e:
+            print(f"Error fetching latest path_id: {e}")
+            return None
+    
+    def path_id_polling_worker(self):
+        """Background thread to periodically poll for the latest path_id"""
+        print("Path ID polling worker started")
+        
+        # Fetch initial path_id
+        self.fetch_latest_path_id()
+        
+        while True:
+            time.sleep(self.path_id_poll_interval)
+            self.fetch_latest_path_id()
         
     def send_frame_to_api(self, frame):
         # Encode frame as JPEG in memory
@@ -181,16 +226,36 @@ class PotholeDetectionService:
             print("Failed to encode image")
             return None
 
-        # Prepare the file payload
+        # Temporary filename - server will rename it with proper path_id and image_id
+        filename = f'temp_{self.detection_count}.jpg'
+        
+        # Prepare the file payload and form data
         files = {
-            'image': (f'frame_{self.image_id}_{self.detection_count}.jpg', encoded_image.tobytes(), 'image/jpeg')
+            'image': (filename, encoded_image.tobytes(), 'image/jpeg')
         }
+        
+        # Thread-safe read of path_id
+        with self.path_id_lock:
+            current_path_id = self.path_id
+        
+        data = {}
+        if current_path_id is not None:
+            data['pathId'] = str(current_path_id)
+        else:
+            print("WARNING: path_id is None, image will not be saved")
+            return None
 
         # Make the POST request
-        response = requests.post(f'http://{api_ip}:{api_port}/api/images', files=files)
-        print("Sent image/frame to API, Status Code:", response.status_code)
-        self.image_id = response.json().get('image_id')
-        return self.image_id
+        response = requests.post(f'http://{api_ip}:{api_port}/api/images', files=files, data=data)
+        print(f"Sent image/frame to API (path_id={current_path_id}), Status Code: {response.status_code}")
+        
+        if response.status_code == 201:
+            self.image_id = response.json().get('image_id')
+            print(f"Image saved with ID: {self.image_id}")
+            return self.image_id
+        else:
+            print(f"Error from API: {response.text}")
+            return None
     
     def send_detection_results_to_api(self, image_id, x1, y1, x2, y2, confidence):
         payload = {
@@ -279,6 +344,10 @@ class PotholeDetectionService:
         """Start the pothole detection service with separate threads"""
         print("Starting pothole detection service...")
         print("Connecting to WebRTC stream and processing frames...")
+        
+        # Start path_id polling thread
+        path_polling_thread = threading.Thread(target=self.path_id_polling_worker, daemon=True)
+        path_polling_thread.start()
         
         # Start WebRTC connection in one thread
         webrtc_thread = threading.Thread(target=self.start_webrtc_connection, daemon=True)
@@ -582,7 +651,13 @@ if __name__ == '__main__':
     # Process 1: Pothole detection from webRTC stream from CSI camera on raspi
     webrtc_uri = f"ws://{raspi_ip}:{webrtc_port}"
     print(f"Connecting to WebRTC at: {webrtc_uri}")
-    potholeDetectionService = PotholeDetectionService(webrtc_uri=webrtc_uri)
+    print(f"Using rover_id: {rover_id}")
+    
+    if rover_id is None:
+        print("ERROR: ROVER_ID environment variable not set. Cannot fetch latest path_id.")
+        exit(1)
+    
+    potholeDetectionService = PotholeDetectionService(webrtc_uri=webrtc_uri, rover_id=rover_id)
     detection_thread = threading.Thread(target=potholeDetectionService.run, daemon=True)
     detection_thread.start()
 
