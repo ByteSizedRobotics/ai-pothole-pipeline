@@ -264,9 +264,26 @@ class PotholeDetectionService:
         if verbose:
             print("Path ID and GPS polling worker started")
         
-        # Fetch initial path_id and GPS
-        self.fetch_latest_path_id()
-        self.fetch_latest_gps()
+        # Fetch initial path_id and GPS aggressively with retries
+        max_retries = 10
+        retry_delay = 2  # seconds
+        
+        for attempt in range(max_retries):
+            path_id = self.fetch_latest_path_id()
+            self.fetch_latest_gps()
+            
+            if path_id is not None:
+                if verbose:
+                    print(f"Successfully fetched initial path_id: {path_id}")
+                break
+            
+            if attempt < max_retries - 1:
+                if verbose:
+                    print(f"No path_id found yet (attempt {attempt + 1}/{max_retries}), retrying in {retry_delay}s...")
+                time.sleep(retry_delay)
+        else:
+            if verbose:
+                print("WARNING: Could not fetch initial path_id after multiple attempts. Will continue polling...")
         
         while True:
             time.sleep(self.path_id_poll_interval)
@@ -338,6 +355,15 @@ class PotholeDetectionService:
     def process_frame_for_detection(self, frame):
         """Process a single frame for pothole detection"""
         if frame is not None:
+            # Check if we have a valid path_id before processing
+            with self.path_id_lock:
+                current_path_id = self.path_id
+            
+            if current_path_id is None:
+                if verbose:
+                    print("Skipping detection: waiting for valid path_id...")
+                return
+            
             self.processing_frame = True
             
             # Run detection
@@ -597,10 +623,10 @@ class FilteringService():
 
     def segment_image(self, image):
         with torch.no_grad():
-            img_tensor = self.transform(image).unsqueeze(0)
+            img_tensor = self.transform(image).unsqueeze(0).to(self.device)
             
             outputs = self.model(img_tensor)
-            predictions = outputs.max(1)[1].cpu().numpy()[0] # TODO: NATHAN verify if this can use GPU instead of CPU
+            predictions = outputs.max(1)[1].cpu().numpy()[0]  # Move to CPU only for numpy conversion
 
             # Create road mask (class index 1 is road in Cityscapes but 0 is the one for road??)
             road_mask = (predictions == 0).astype(np.uint8)
@@ -664,6 +690,19 @@ if __name__ == '__main__':
     import queue
     import threading
     from concurrent.futures import ThreadPoolExecutor
+    
+    # GPU verification - always print regardless of verbose flag
+    print("="*60)
+    print(f"PyTorch version: {torch.__version__}")
+    print(f"CUDA available: {torch.cuda.is_available()}")
+    if torch.cuda.is_available():
+        print(f"CUDA version: {torch.version.cuda}")
+        print(f"GPU device: {torch.cuda.get_device_name(0)}")
+        print(f"GPU memory: {torch.cuda.get_device_properties(0).total_memory / 1024**3:.2f} GB")
+    else:
+        print("WARNING: Running on CPU - GPU not detected!")
+    print("="*60)
+    print()
     
     detection_queue = queue.Queue()
 
