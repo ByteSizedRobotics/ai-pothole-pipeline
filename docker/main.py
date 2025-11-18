@@ -50,6 +50,12 @@ class PotholeDetectionService:
         self.path_id_lock = threading.Lock()  # Thread-safe path_id updates
         self.path_id_poll_interval = 30  # Poll for new path every 30 seconds
         
+        # GPS data variables
+        self.latitude = 0
+        self.longitude = 0
+        self.gps_lock = threading.Lock()  # Thread-safe GPS updates
+        self.gps_lock = threading.Lock()  # Thread-safe GPS updates
+        
         # Video stream variables
         self.current_frame = None
         self.pc = None
@@ -221,17 +227,51 @@ class PotholeDetectionService:
                 print(f"Error fetching latest path_id: {e}")
             return None
     
-    def path_id_polling_worker(self):
-        """Background thread to periodically poll for the latest path_id"""
-        if verbose:
-            print("Path ID polling worker started")
+    def fetch_latest_gps(self):
+        """Fetch the latest GPS coordinates from the API for this rover"""
+        if self.rover_id is None:
+            if verbose:
+                print("ERROR: rover_id is None, cannot fetch latest GPS")
+            return None
         
-        # Fetch initial path_id
+        try:
+            response = requests.get(f'http://{api_ip}:{api_port}/api/rovers/{self.rover_id}/gps', timeout=5)
+            if response.status_code == 200:
+                data = response.json()
+                latitude = data.get('latitude', 0)
+                longitude = data.get('longitude', 0)
+                
+                # Thread-safe update of GPS coordinates
+                with self.gps_lock:
+                    if latitude != self.latitude or longitude != self.longitude:
+                        if verbose:
+                            print(f"Updated GPS: ({self.latitude}, {self.longitude}) -> ({latitude}, {longitude})")
+                        self.latitude = latitude
+                        self.longitude = longitude
+                
+                return (latitude, longitude)
+            else:
+                if verbose:
+                    print(f"Failed to fetch GPS data: HTTP {response.status_code}")
+                return None
+        except Exception as e:
+            if verbose:
+                print(f"Error fetching GPS data: {e}")
+            return None
+    
+    def path_id_polling_worker(self):
+        """Background thread to periodically poll for the latest path_id and GPS coordinates"""
+        if verbose:
+            print("Path ID and GPS polling worker started")
+        
+        # Fetch initial path_id and GPS
         self.fetch_latest_path_id()
+        self.fetch_latest_gps()
         
         while True:
             time.sleep(self.path_id_poll_interval)
             self.fetch_latest_path_id()
+            self.fetch_latest_gps()
         
     def send_frame_to_api(self, frame):
         # Encode frame as JPEG in memory
@@ -249,9 +289,13 @@ class PotholeDetectionService:
             'image': (filename, encoded_image.tobytes(), 'image/jpeg')
         }
         
-        # Thread-safe read of path_id
+        # Thread-safe read of path_id and GPS coordinates
         with self.path_id_lock:
             current_path_id = self.path_id
+        
+        with self.gps_lock:
+            current_latitude = self.latitude
+            current_longitude = self.longitude
         
         data = {}
         if current_path_id is not None:
@@ -260,6 +304,10 @@ class PotholeDetectionService:
             if verbose:
                 print("WARNING: path_id is None, image will not be saved")
             return None
+        
+        # Add GPS coordinates to the request
+        data['latitude'] = str(current_latitude)
+        data['longitude'] = str(current_longitude)
 
         # Make the POST request
         response = requests.post(f'http://{api_ip}:{api_port}/api/images', files=files, data=data)
